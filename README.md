@@ -28,7 +28,7 @@ cp server/.env.example server/.env   # then fill in MONGO_URI and JWT_SECRET
 # 3. Seed the database (24 products + admin & demo accounts)
 npm run seed
 
-# 4. Run API (:5000) and storefront (:5173) together
+# 4. Run API (:5001) and storefront (:5173) together
 npm run dev
 ```
 

@@ -26,4 +26,11 @@ export default [
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
     },
   },
+  {
+    // Context files intentionally export a Provider component plus its
+    // consumer hook — the conventional pairing — so the fast-refresh
+    // "components only" rule doesn't apply there.
+    files: ['**/context/*.jsx'],
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
 ];

@@ -13,7 +13,8 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
-const PORT = process.env.PORT || 5000;
+// Default 5001: macOS AirPlay Receiver listens on 5000 and hijacks requests.
+const PORT = process.env.PORT || 5001;
 
 const start = async () => {
   await connectDB(process.env.MONGO_URI);

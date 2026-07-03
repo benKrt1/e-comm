@@ -1,0 +1,54 @@
+.field {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.input {
+  width: 100%;
+  padding: 1.375rem var(--space-4) 0.5rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast);
+}
+
+.input:focus {
+  border-color: var(--color-accent);
+  outline: none; /* the border is the focus indicator here */
+}
+
+.hasError,
+.hasError:focus {
+  border-color: var(--color-danger);
+}
+
+/* Floating label: rests as a placeholder, floats when focused or filled */
+.label {
+  position: absolute;
+  left: var(--space-4);
+  top: 0.9375rem;
+  color: var(--color-text-muted);
+  pointer-events: none;
+  transform-origin: left top;
+  transition: transform var(--transition-fast), color var(--transition-fast);
+}
+
+.input:focus + .label,
+.input:not(:placeholder-shown) + .label {
+  transform: translateY(-0.55rem) scale(0.74);
+}
+
+.input:focus + .label {
+  color: var(--color-accent);
+}
+
+.hasError + .label {
+  color: var(--color-danger);
+}
+
+.error {
+  margin-top: var(--space-1);
+  font-size: 0.8125rem;
+  color: var(--color-danger);
+}

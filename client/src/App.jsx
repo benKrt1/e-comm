@@ -1,42 +1,36 @@
-import { Routes, Route } from 'react-router-dom';
-import { motion, useReducedMotion } from 'framer-motion';
+import { Routes, Route, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
+import Navbar from './components/layout/Navbar';
+import PageTransition from './components/layout/PageTransition';
+import ProtectedRoute from './components/layout/ProtectedRoute';
+import HomePage from './pages/HomePage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import ProfilePage from './pages/ProfilePage';
+import NotFoundPage from './pages/NotFoundPage';
 
-/**
- * Phase 1 shell: verifies the full client stack is wired
- * (Router, Framer Motion, theme variables, bundled fonts).
- * Real pages replace this placeholder from Phase 2 onward.
- */
-function Placeholder() {
-  const reduceMotion = useReducedMotion();
-
-  return (
-    <motion.main
-      initial={reduceMotion ? false : { opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: 'easeOut' }}
-      style={{
-        minHeight: '100dvh',
-        display: 'grid',
-        placeContent: 'center',
-        textAlign: 'center',
-        gap: 'var(--space-4)',
-        padding: 'var(--space-8)',
-      }}
-    >
-      <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)' }}>
-        Nord<span style={{ color: 'var(--color-accent)' }}>Cart</span>
-      </h1>
-      <p style={{ color: 'var(--color-text-muted)', maxWidth: '38ch' }}>
-        Nordic-designed tech &amp; audio. Storefront under construction — API scaffolding complete.
-      </p>
-    </motion.main>
-  );
-}
+/** Shorthand: every page mounts inside the shared enter/exit transition. */
+const page = (element) => <PageTransition>{element}</PageTransition>;
 
 export default function App() {
+  const location = useLocation();
+
   return (
-    <Routes>
-      <Route path="*" element={<Placeholder />} />
-    </Routes>
+    <>
+      <Navbar />
+      {/* mode="wait": the leaving page finishes its exit animation before
+          the next one enters — keyed by pathname so route changes trigger it. */}
+      <AnimatePresence mode="wait">
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={page(<HomePage />)} />
+          <Route path="/login" element={page(<LoginPage />)} />
+          <Route path="/register" element={page(<RegisterPage />)} />
+          <Route element={<ProtectedRoute routesLocation={location} />}>
+            <Route path="/profile" element={page(<ProfilePage />)} />
+          </Route>
+          <Route path="*" element={page(<NotFoundPage />)} />
+        </Routes>
+      </AnimatePresence>
+    </>
   );
 }
