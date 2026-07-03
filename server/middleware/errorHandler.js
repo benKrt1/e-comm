@@ -22,6 +22,13 @@ const errorHandler = (err, _req, res, _next) => {
       .join('. ');
   }
 
+  // Mongoose: optimistic-concurrency clash — two requests saved the same
+  // document at once (e.g. a double-clicked add-to-cart). Benign; retryable.
+  if (err.name === 'VersionError') {
+    statusCode = 409;
+    message = 'Your cart changed in another request — please try again';
+  }
+
   // MongoDB: unique index violation (e.g. duplicate email)
   if (err.code === 11000) {
     statusCode = 409;

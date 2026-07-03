@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import api, { getErrorMessage } from '../api/axios';
 import { useToast } from '../context/ToastContext';
+import { useCart } from '../context/CartContext';
 import { formatPrice } from '../utils/format';
 import Rating from '../components/ui/Rating';
 import Button from '../components/ui/Button';
@@ -14,6 +15,8 @@ import styles from './ProductPage.module.css';
 export default function ProductPage() {
   const { slug } = useParams();
   const addToast = useToast();
+  const { addItem } = useCart();
+  const [adding, setAdding] = useState(false);
 
   const [data, setData] = useState({ product: null, related: [], loading: true, error: null });
   const [activeImage, setActiveImage] = useState(0);
@@ -84,6 +87,18 @@ export default function ProductPage() {
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
     setZoomOrigin(`${x}% ${y}%`);
+  };
+
+  const handleAddToCart = async () => {
+    setAdding(true);
+    try {
+      await addItem(product, quantity);
+      addToast(`${product.name} added to your cart`);
+    } catch (err) {
+      addToast(getErrorMessage(err), 'error');
+    } finally {
+      setAdding(false);
+    }
   };
 
   return (
@@ -165,10 +180,7 @@ export default function ProductPage() {
                 +
               </button>
             </div>
-            <Button
-              disabled={outOfStock}
-              onClick={() => addToast('The cart arrives in the next build phase — stay tuned!')}
-            >
+            <Button disabled={outOfStock} isLoading={adding} onClick={handleAddToCart}>
               {outOfStock ? 'Out of stock' : 'Add to cart'}
             </Button>
           </div>

@@ -6,6 +6,7 @@ import ProtectedRoute from './components/layout/ProtectedRoute';
 import HomePage from './pages/HomePage';
 import CatalogPage from './pages/CatalogPage';
 import ProductPage from './pages/ProductPage';
+import CartPage from './pages/CartPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
@@ -27,6 +28,7 @@ export default function App() {
           <Route path="/" element={page(<HomePage />)} />
           <Route path="/products" element={page(<CatalogPage />)} />
           <Route path="/products/:slug" element={page(<ProductPage />)} />
+          <Route path="/cart" element={page(<CartPage />)} />
           <Route path="/login" element={page(<LoginPage />)} />
           <Route path="/register" element={page(<RegisterPage />)} />
           <Route element={<ProtectedRoute routesLocation={location} />}>
