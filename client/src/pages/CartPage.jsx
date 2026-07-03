@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
@@ -12,6 +12,7 @@ import styles from './CartPage.module.css';
 export default function CartPage() {
   const { items, status, itemCount, subtotal, updateQuantity, removeItem, clearCart } = useCart();
   const addToast = useToast();
+  const navigate = useNavigate();
 
   // Context actions throw on network errors — surface them, never crash.
   const safely = (action) => async (...args) => {
@@ -74,10 +75,7 @@ export default function CartPage() {
               <dd>Calculated at checkout</dd>
             </div>
           </dl>
-          <Button
-            className={styles.checkoutBtn}
-            onClick={() => addToast('Checkout arrives in the next build phase — stay tuned!')}
-          >
+          <Button className={styles.checkoutBtn} onClick={() => navigate('/checkout')}>
             Proceed to checkout
           </Button>
           <button className={styles.clear} onClick={safely(clearCart)}>

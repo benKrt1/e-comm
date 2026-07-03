@@ -69,3 +69,15 @@
   font-size: 1.5rem;
   font-weight: 600;
 }
+
+.ordersLink {
+  display: inline-block;
+  margin-top: var(--space-6);
+  color: var(--color-accent);
+  font-weight: 600;
+  transition: color var(--transition-fast);
+}
+
+.ordersLink:hover {
+  color: var(--color-accent-strong);
+}

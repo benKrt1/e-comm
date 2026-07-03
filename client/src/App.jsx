@@ -7,9 +7,12 @@ import HomePage from './pages/HomePage';
 import CatalogPage from './pages/CatalogPage';
 import ProductPage from './pages/ProductPage';
 import CartPage from './pages/CartPage';
+import CheckoutPage from './pages/CheckoutPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
+import OrdersPage from './pages/OrdersPage';
+import OrderPage from './pages/OrderPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 /** Shorthand: every page mounts inside the shared enter/exit transition. */
@@ -33,6 +36,9 @@ export default function App() {
           <Route path="/register" element={page(<RegisterPage />)} />
           <Route element={<ProtectedRoute routesLocation={location} />}>
             <Route path="/profile" element={page(<ProfilePage />)} />
+            <Route path="/checkout" element={page(<CheckoutPage />)} />
+            <Route path="/orders" element={page(<OrdersPage />)} />
+            <Route path="/orders/:id" element={page(<OrderPage />)} />
           </Route>
           <Route path="*" element={page(<NotFoundPage />)} />
         </Routes>

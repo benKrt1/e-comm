@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import styles from './ProfilePage.module.css';
 
@@ -27,6 +28,9 @@ export default function ProfilePage() {
             <dd>{user.wishlist.length}</dd>
           </div>
         </dl>
+        <Link to="/orders" className={styles.ordersLink}>
+          Order history →
+        </Link>
       </section>
     </div>
   );
