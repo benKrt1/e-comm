@@ -27,7 +27,9 @@ const seed = async () => {
 
   // Idempotent: always start from a clean slate so re-running never duplicates data.
   await Promise.all([Product.deleteMany(), User.deleteMany()]);
-  console.log('✔ Cleared products and users');
+  // Align DB indexes with the schema (also drops indexes removed from the model).
+  await Promise.all([Product.syncIndexes(), User.syncIndexes()]);
+  console.log('✔ Cleared products and users, synced indexes');
 
   if (!destroyOnly) {
     const productsJson = await readFile(new URL('./products.json', import.meta.url), 'utf-8');

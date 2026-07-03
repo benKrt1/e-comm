@@ -55,9 +55,9 @@ const productSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Catalog full-text search across the fields users actually type.
-productSchema.index({ name: 'text', description: 'text', brand: 'text' });
 // Category filter combined with price sort/range is the catalog's hottest query.
+// (Search uses a case-insensitive regex — no text index — because the search
+// box sends prefixes like "keyb", which $text cannot match.)
 productSchema.index({ category: 1, price: 1 });
 
 // Generate the slug from the name: "Fjell NightHawk ANC" -> "fjell-nighthawk-anc"

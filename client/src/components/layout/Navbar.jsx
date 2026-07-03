@@ -34,6 +34,9 @@ export default function Navbar() {
         </Link>
 
         <div className={styles.links}>
+          <NavLink to="/products" className={({ isActive }) => (isActive ? styles.active : undefined)}>
+            Shop
+          </NavLink>
           {status === 'authenticated' ? (
             <>
               <NavLink

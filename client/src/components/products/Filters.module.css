@@ -1,0 +1,108 @@
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.group {
+  border: none;
+}
+
+.legend {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  margin-bottom: var(--space-4);
+}
+
+.pills {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.pill {
+  padding: var(--space-1) var(--space-3);
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  transition: color var(--transition-fast), border-color var(--transition-fast),
+    background-color var(--transition-fast);
+}
+
+.pill:hover {
+  color: var(--color-text);
+  border-color: var(--color-accent);
+}
+
+.pill.active {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-contrast);
+  font-weight: 600;
+}
+
+.count {
+  opacity: 0.65;
+  font-size: 0.75rem;
+}
+
+/* --- Dual-thumb range slider: two overlaid native inputs, the shared
+       track highlight painted between --lo and --hi custom props. --- */
+.slider {
+  position: relative;
+  height: 20px;
+  /* the filled segment between the two thumbs */
+  background: linear-gradient(
+      to right,
+      var(--color-border) var(--lo),
+      var(--color-accent) var(--lo),
+      var(--color-accent) var(--hi),
+      var(--color-border) var(--hi)
+    )
+    no-repeat center / 100% 4px;
+  border-radius: 2px;
+}
+
+.slider input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  appearance: none;
+  background: none;
+  pointer-events: none; /* only the thumbs are interactive */
+  margin: 0;
+}
+
+.slider input::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  border: 3px solid var(--color-bg);
+  cursor: grab;
+  pointer-events: auto;
+}
+
+.slider input::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  border: 3px solid var(--color-bg);
+  cursor: grab;
+  pointer-events: auto;
+}
+
+.slider input:active::-webkit-slider-thumb {
+  cursor: grabbing;
+}
+
+.priceLabel {
+  margin-top: var(--space-3);
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}

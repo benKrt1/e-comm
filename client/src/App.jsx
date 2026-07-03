@@ -4,6 +4,8 @@ import Navbar from './components/layout/Navbar';
 import PageTransition from './components/layout/PageTransition';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import HomePage from './pages/HomePage';
+import CatalogPage from './pages/CatalogPage';
+import ProductPage from './pages/ProductPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
@@ -23,6 +25,8 @@ export default function App() {
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           <Route path="/" element={page(<HomePage />)} />
+          <Route path="/products" element={page(<CatalogPage />)} />
+          <Route path="/products/:slug" element={page(<ProductPage />)} />
           <Route path="/login" element={page(<LoginPage />)} />
           <Route path="/register" element={page(<RegisterPage />)} />
           <Route element={<ProtectedRoute routesLocation={location} />}>

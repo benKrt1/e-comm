@@ -1,5 +1,5 @@
 .hero {
-  min-height: calc(100dvh - 130px);
+  min-height: 70dvh;
   max-width: var(--content-max);
   margin: 0 auto;
   padding: var(--space-16) var(--space-6);
@@ -37,4 +37,31 @@
 .cta:hover {
   background: var(--color-accent-strong);
   transform: translateY(-2px);
+}
+
+.featured {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 0 var(--space-6) var(--space-16);
+}
+
+.featuredHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--space-6);
+}
+
+.featuredHeader h2 {
+  font-size: 1.75rem;
+}
+
+.allLink {
+  color: var(--color-accent);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.allLink:hover {
+  text-decoration: underline;
 }

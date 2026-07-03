@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import authRoutes from './routes/authRoutes.js';
+import productRoutes from './routes/productRoutes.js';
 import notFound from './middleware/notFound.js';
 import errorHandler from './middleware/errorHandler.js';
 
@@ -30,9 +31,9 @@ app.get('/api/v1/health', (req, res) => {
 });
 
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/products', productRoutes);
 
 // Feature routers are mounted here as each phase lands:
-// app.use('/api/v1/products', productRoutes); — Phase 3
 // app.use('/api/v1/cart', cartRoutes);        — Phase 4
 // app.use('/api/v1/orders', orderRoutes);     — Phase 5
 // app.use('/api/v1/reviews', reviewRoutes);   — Phase 6
