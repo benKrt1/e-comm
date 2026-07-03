@@ -1375,6 +1375,13 @@ Review-driven changes from the planned code:
 6. `utils/stripe.js`: lazy `getStripe()` instead of module-eval `loadStripe` — the eager version fetched js.stripe.com on every page view app-wide.
 7. `OrderPage.jsx`: order-item key simplified to `item.product` (unique per order — cart dedupes); `OrdersPage.module.css` `.browse` aligned with CartPage's copy (font-size/letter-spacing).
 
+Runtime-verification fixes (2026-07-03, after real Stripe keys landed — static review could not have caught these):
+
+8. `createPaymentIntent`: `automatic_payment_methods` now sets `allow_redirects: 'never'` — the default allows redirect-based methods (Klarna & co), which makes every confirm demand a `return_url` and broke confirmation outright.
+9. Stock decrement: Mongoose 9 requires `updatePipeline: true` to run aggregation-pipeline updates — without it `createOrder` failed post-payment. The transaction proved itself here: the failure rolled back cleanly (no order, stock/cart intact) and the idempotent retry completed the order from the already-paid intent.
+
+Verified end-to-end with real test keys: full curl suite (intent → confirm `pm_card_visa` → order → idempotent re-post → stock −2 → cart cleared → reads); browser checkout with `4242…` card (dark PaymentElement, card-only, order confirmation page, badge cleared); declined card `4000…0002` (localized error toast, no order, cart intact); order history + profile link.
+
 Accepted trade-offs (reviewed, deliberate): no cross-tab cart sync (server 409 is the backstop, comments say so honestly); `.browse` CSS duplicated per page (codebase convention); error-text-as-h1 pattern (matches ProductPage); free-text country; placeholder-key heuristic in config/stripe.js; errorHandler's VersionError message still says "cart" (apt for the transaction-abort case too).
 
 ## Self-review notes

@@ -45,7 +45,9 @@ export const createPaymentIntent = async (req, res) => {
   const intent = await getStripe().paymentIntents.create({
     amount: totals.totalPrice,
     currency: 'sek',
-    automatic_payment_methods: { enabled: true },
+    // allow_redirects 'never': redirect-based methods (Klarna & co) would
+    // demand a return_url on every confirm — this checkout is on-page only.
+    automatic_payment_methods: { enabled: true, allow_redirects: 'never' },
     // Ties the intent to this user so /orders can verify ownership.
     metadata: { userId: req.user._id.toString() },
   });
@@ -129,7 +131,9 @@ export const createOrder = async (req, res) => {
         await Product.updateOne(
           { _id: item.product },
           [{ $set: { countInStock: { $max: [0, { $subtract: ['$countInStock', item.quantity] }] } } }],
-          { session }
+          // updatePipeline: Mongoose 9 requires opting in to aggregation-
+          // pipeline updates (which this is, to floor the stock at 0).
+          { session, updatePipeline: true }
         );
       }
 
