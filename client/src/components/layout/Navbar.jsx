@@ -78,6 +78,14 @@ export default function Navbar() {
           </NavLink>
           {status === 'authenticated' ? (
             <>
+              {user.role === 'admin' && (
+                <NavLink
+                  to="/admin"
+                  className={({ isActive }) => (isActive ? styles.active : undefined)}
+                >
+                  Admin
+                </NavLink>
+              )}
               <NavLink
                 to="/profile"
                 className={({ isActive }) => (isActive ? styles.active : undefined)}

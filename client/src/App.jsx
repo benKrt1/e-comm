@@ -3,6 +3,7 @@ import { AnimatePresence } from 'framer-motion';
 import Navbar from './components/layout/Navbar';
 import PageTransition from './components/layout/PageTransition';
 import ProtectedRoute from './components/layout/ProtectedRoute';
+import AdminRoute from './components/layout/AdminRoute';
 import HomePage from './pages/HomePage';
 import CatalogPage from './pages/CatalogPage';
 import ProductPage from './pages/ProductPage';
@@ -15,6 +16,10 @@ import OrdersPage from './pages/OrdersPage';
 import OrderPage from './pages/OrderPage';
 import WishlistPage from './pages/WishlistPage';
 import NotFoundPage from './pages/NotFoundPage';
+import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+import AdminProductsPage from './pages/admin/AdminProductsPage';
+import AdminProductFormPage from './pages/admin/AdminProductFormPage';
+import AdminOrdersPage from './pages/admin/AdminOrdersPage';
 
 /** Shorthand: every page mounts inside the shared enter/exit transition. */
 const page = (element) => <PageTransition>{element}</PageTransition>;
@@ -41,6 +46,13 @@ export default function App() {
             <Route path="/orders" element={page(<OrdersPage />)} />
             <Route path="/orders/:id" element={page(<OrderPage />)} />
             <Route path="/wishlist" element={page(<WishlistPage />)} />
+          </Route>
+          <Route element={<AdminRoute routesLocation={location} />}>
+            <Route path="/admin" element={page(<AdminDashboardPage />)} />
+            <Route path="/admin/products" element={page(<AdminProductsPage />)} />
+            <Route path="/admin/products/new" element={page(<AdminProductFormPage />)} />
+            <Route path="/admin/products/:id/edit" element={page(<AdminProductFormPage />)} />
+            <Route path="/admin/orders" element={page(<AdminOrdersPage />)} />
           </Route>
           <Route path="*" element={page(<NotFoundPage />)} />
         </Routes>
