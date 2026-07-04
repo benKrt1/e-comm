@@ -1,4 +1,5 @@
 .card {
+  position: relative;
   list-style: none;
   border-radius: var(--radius-lg);
   background: var(--color-surface);
@@ -80,4 +81,11 @@
   font-size: 1.125rem;
   color: var(--color-accent);
   margin-top: var(--space-1);
+}
+
+.wishlist {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  z-index: 2;
 }

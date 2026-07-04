@@ -70,9 +70,15 @@
   font-weight: 600;
 }
 
+.links {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+}
+
 .ordersLink {
   display: inline-block;
-  margin-top: var(--space-6);
   color: var(--color-accent);
   font-weight: 600;
   transition: color var(--transition-fast);

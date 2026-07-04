@@ -28,9 +28,14 @@ export default function ProfilePage() {
             <dd>{user.wishlist.length}</dd>
           </div>
         </dl>
-        <Link to="/orders" className={styles.ordersLink}>
-          Order history →
-        </Link>
+        <div className={styles.links}>
+          <Link to="/orders" className={styles.ordersLink}>
+            Order history →
+          </Link>
+          <Link to="/wishlist" className={styles.ordersLink}>
+            Wishlist →
+          </Link>
+        </div>
       </section>
     </div>
   );

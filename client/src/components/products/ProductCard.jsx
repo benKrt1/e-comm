@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Rating from '../ui/Rating';
+import WishlistButton from '../wishlist/WishlistButton';
 import { formatPrice } from '../../utils/format';
 import placeholder from '../../assets/placeholder-product.svg';
 import styles from './ProductCard.module.css';
@@ -38,6 +39,7 @@ export default function ProductCard({ product }) {
           <p className={styles.price}>{formatPrice(product.price)}</p>
         </div>
       </Link>
+      <WishlistButton product={product} className={styles.wishlist} />
     </motion.li>
   );
 }

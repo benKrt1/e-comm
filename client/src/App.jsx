@@ -13,6 +13,7 @@ import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
 import OrdersPage from './pages/OrdersPage';
 import OrderPage from './pages/OrderPage';
+import WishlistPage from './pages/WishlistPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 /** Shorthand: every page mounts inside the shared enter/exit transition. */
@@ -39,6 +40,7 @@ export default function App() {
             <Route path="/checkout" element={page(<CheckoutPage />)} />
             <Route path="/orders" element={page(<OrdersPage />)} />
             <Route path="/orders/:id" element={page(<OrderPage />)} />
+            <Route path="/wishlist" element={page(<WishlistPage />)} />
           </Route>
           <Route path="*" element={page(<NotFoundPage />)} />
         </Routes>

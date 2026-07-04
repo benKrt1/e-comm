@@ -9,6 +9,8 @@ import Rating from '../components/ui/Rating';
 import Button from '../components/ui/Button';
 import Skeleton from '../components/ui/Skeleton';
 import ProductGrid from '../components/products/ProductGrid';
+import WishlistButton from '../components/wishlist/WishlistButton';
+import ReviewsSection from '../components/reviews/ReviewsSection';
 import placeholder from '../assets/placeholder-product.svg';
 import styles from './ProductPage.module.css';
 
@@ -183,9 +185,17 @@ export default function ProductPage() {
             <Button disabled={outOfStock} isLoading={adding} onClick={handleAddToCart}>
               {outOfStock ? 'Out of stock' : 'Add to cart'}
             </Button>
+            <WishlistButton product={product} />
           </div>
         </section>
       </div>
+
+      <ReviewsSection
+        productId={product._id}
+        onStatsChange={(rating, numReviews) =>
+          setData((d) => ({ ...d, product: { ...d.product, rating, numReviews } }))
+        }
+      />
 
       {related.length > 0 && (
         <section className={styles.related} aria-labelledby="related-heading">
