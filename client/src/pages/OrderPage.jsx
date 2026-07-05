@@ -4,11 +4,13 @@ import api, { getErrorMessage } from '../api/axios';
 import { formatPrice } from '../utils/format';
 import placeholder from '../assets/placeholder-product.svg';
 import Spinner from '../components/ui/Spinner';
+import usePageTitle from '../hooks/usePageTitle';
 import styles from './OrderPage.module.css';
 
 const STATUS_LABELS = { pending: 'Being prepared', shipped: 'Shipped', delivered: 'Delivered' };
 
 export default function OrderPage() {
+  usePageTitle('Order details');
   const { id } = useParams();
   const [state, setState] = useState({ order: null, loading: true, error: null });
 

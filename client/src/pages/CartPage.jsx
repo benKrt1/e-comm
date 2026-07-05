@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
@@ -7,19 +8,37 @@ import { formatPrice } from '../utils/format';
 import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
 import CartItemRow from '../components/cart/CartItemRow';
+import usePageTitle from '../hooks/usePageTitle';
 import styles from './CartPage.module.css';
 
 export default function CartPage() {
+  usePageTitle('Your cart');
   const { items, status, itemCount, subtotal, updateQuantity, removeItem, clearCart } = useCart();
   const addToast = useToast();
   const navigate = useNavigate();
 
+  // Deferred empty state: when the last row is removed, keep the (empty)
+  // list mounted until AnimatePresence finishes the exit animation, then
+  // swap — otherwise the empty state pops in over the exiting row
+  // (deferred from the Phase 4 review to this phase).
+  const hasItems = items.length > 0;
+  const [exitDone, setExitDone] = useState(true);
+  const [prevHasItems, setPrevHasItems] = useState(hasItems);
+  if (prevHasItems !== hasItems) {
+    // Render-time adjustment (same pattern as ProductPage's slug reset).
+    setPrevHasItems(hasItems);
+    if (!hasItems) setExitDone(false);
+  }
+
   // Context actions throw on network errors — surface them, never crash.
+  // Returns false on failure so rows know whether to re-enable themselves.
   const safely = (action) => async (...args) => {
     try {
       await action(...args);
+      return true;
     } catch (err) {
       addToast(getErrorMessage(err), 'error');
+      return false;
     }
   };
 
@@ -31,7 +50,7 @@ export default function CartPage() {
     );
   }
 
-  if (items.length === 0) {
+  if (!hasItems && exitDone) {
     return (
       <main className={`${styles.page} ${styles.empty}`}>
         <h1>Your cart is empty</h1>
@@ -51,7 +70,7 @@ export default function CartPage() {
 
       <div className={styles.layout}>
         <ul className={styles.list}>
-          <AnimatePresence initial={false}>
+          <AnimatePresence initial={false} onExitComplete={() => setExitDone(true)}>
             {items.map((item) => (
               <CartItemRow
                 key={item.product._id}

@@ -9,6 +9,7 @@ import { formatPrice } from '../utils/format';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Spinner from '../components/ui/Spinner';
+import usePageTitle from '../hooks/usePageTitle';
 import styles from './CheckoutPage.module.css';
 
 // Mirrors global.css — Stripe renders the PaymentElement inside an iframe,
@@ -238,6 +239,7 @@ function CheckoutFlow({ items, onPlaced }) {
 }
 
 export default function CheckoutPage() {
+  usePageTitle('Checkout');
   const { items, status: cartStatus, clearCart } = useCart();
   // Set before the cart empties on success — stops the guard below from
   // bouncing to /cart in the render between clearCart() and navigation

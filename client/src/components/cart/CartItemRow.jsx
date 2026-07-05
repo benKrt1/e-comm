@@ -19,13 +19,20 @@ export default function CartItemRow({ item, onQuantityChange, onRemove }) {
 
   // Serialize this row's mutations: rapid +/− clicks would otherwise race,
   // each sending the same absolute quantity computed from stale props.
+  // Handlers resolve to false on failure (CartPage's safely()).
   const run = async (fn) => {
     setBusy(true);
-    try {
-      await fn();
-    } finally {
-      setBusy(false);
-    }
+    await fn();
+    setBusy(false);
+  };
+
+  // A successful remove unmounts this row — leaving it disabled prevents
+  // ghost clicks during the exit animation. Re-enable only on failure
+  // (deferred from the Phase 6 review to this phase).
+  const handleRemove = async () => {
+    setBusy(true);
+    const ok = await onRemove(product._id);
+    if (ok === false) setBusy(false);
   };
 
   return (
@@ -78,7 +85,7 @@ export default function CartItemRow({ item, onQuantityChange, onRemove }) {
 
       <button
         className={styles.remove}
-        onClick={() => run(() => onRemove(product._id))}
+        onClick={handleRemove}
         disabled={busy}
         aria-label={`Remove ${product.name} from cart`}
       >

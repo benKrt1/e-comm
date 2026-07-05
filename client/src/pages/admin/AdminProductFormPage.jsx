@@ -5,6 +5,7 @@ import { useToast } from '../../context/ToastContext';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Spinner from '../../components/ui/Spinner';
+import usePageTitle from '../../hooks/usePageTitle';
 import styles from './AdminProductFormPage.module.css';
 
 const CATEGORIES = ['audio', 'keyboards', 'smart-home', 'desk', 'wearables', 'accessories'];
@@ -41,6 +42,7 @@ async function uploadToCloudinary(file) {
 
 export default function AdminProductFormPage() {
   const { id } = useParams(); // present → edit mode
+  usePageTitle(id ? 'Edit product · Admin' : 'New product · Admin');
   const navigate = useNavigate();
   const addToast = useToast();
   const fileInputRef = useRef(null);

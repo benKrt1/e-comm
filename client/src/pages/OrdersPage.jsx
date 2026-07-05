@@ -3,11 +3,13 @@ import { Link } from 'react-router-dom';
 import api, { getErrorMessage } from '../api/axios';
 import { formatPrice } from '../utils/format';
 import Spinner from '../components/ui/Spinner';
+import usePageTitle from '../hooks/usePageTitle';
 import styles from './OrdersPage.module.css';
 
 const STATUS_LABELS = { pending: 'Being prepared', shipped: 'Shipped', delivered: 'Delivered' };
 
 export default function OrdersPage() {
+  usePageTitle('Your orders');
   const [state, setState] = useState({ orders: [], loading: true, error: null });
 
   useEffect(() => {

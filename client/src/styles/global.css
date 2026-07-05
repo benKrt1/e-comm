@@ -139,3 +139,20 @@ button {
     scroll-behavior: auto !important;
   }
 }
+
+/* --- Skip link: invisible until keyboard-focused --- */
+.skip-link {
+  position: fixed;
+  top: 0;
+  left: -100vw;
+  z-index: 200;
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+  padding: var(--space-2) var(--space-4);
+  border-radius: 0 0 var(--radius-md) 0;
+  font-weight: 600;
+}
+
+.skip-link:focus {
+  left: 0;
+}

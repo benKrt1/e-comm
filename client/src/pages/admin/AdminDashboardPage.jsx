@@ -3,11 +3,13 @@ import { Link } from 'react-router-dom';
 import api, { getErrorMessage } from '../../api/axios';
 import { formatPrice } from '../../utils/format';
 import Spinner from '../../components/ui/Spinner';
+import usePageTitle from '../../hooks/usePageTitle';
 import styles from './AdminDashboardPage.module.css';
 
 const STATUS_LABELS = { pending: 'Pending', shipped: 'Shipped', delivered: 'Delivered' };
 
 export default function AdminDashboardPage() {
+  usePageTitle('Admin');
   const [state, setState] = useState({ stats: null, error: null });
 
   useEffect(() => {

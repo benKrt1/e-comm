@@ -9,6 +9,7 @@ import ProductGridSkeleton from '../components/products/ProductGridSkeleton';
 import Filters from '../components/products/Filters';
 import SearchBar from '../components/products/SearchBar';
 import Pagination from '../components/products/Pagination';
+import usePageTitle from '../hooks/usePageTitle';
 import styles from './CatalogPage.module.css';
 
 /**
@@ -16,6 +17,7 @@ import styles from './CatalogPage.module.css';
  * so filtered views survive refresh, back-navigation, and link sharing.
  */
 export default function CatalogPage() {
+  usePageTitle('Shop');
   const [searchParams, setSearchParams] = useSearchParams();
   const [meta, setMeta] = useState(null);
 

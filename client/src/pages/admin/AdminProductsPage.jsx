@@ -5,9 +5,11 @@ import { useToast } from '../../context/ToastContext';
 import { formatPrice } from '../../utils/format';
 import Spinner from '../../components/ui/Spinner';
 import placeholder from '../../assets/placeholder-product.svg';
+import usePageTitle from '../../hooks/usePageTitle';
 import styles from './AdminProductsPage.module.css';
 
 export default function AdminProductsPage() {
+  usePageTitle('Products · Admin');
   const addToast = useToast();
   const [products, setProducts] = useState(null);
   // Two-click delete: first click arms the row, second click commits.

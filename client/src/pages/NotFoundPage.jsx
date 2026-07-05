@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
+import usePageTitle from '../hooks/usePageTitle';
 import styles from './NotFoundPage.module.css';
 
 export default function NotFoundPage() {
+  usePageTitle('Page not found');
   return (
     <main className={styles.wrapper}>
       <p className={styles.code} aria-hidden="true">

@@ -2,9 +2,11 @@ import { Link } from 'react-router-dom';
 import { useWishlist } from '../context/WishlistContext';
 import ProductGrid from '../components/products/ProductGrid';
 import Spinner from '../components/ui/Spinner';
+import usePageTitle from '../hooks/usePageTitle';
 import styles from './WishlistPage.module.css';
 
 export default function WishlistPage() {
+  usePageTitle('Wishlist');
   const { items, status, count } = useWishlist();
 
   if (status === 'loading') {

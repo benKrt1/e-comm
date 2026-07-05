@@ -4,11 +4,13 @@ import api, { getErrorMessage } from '../../api/axios';
 import { useToast } from '../../context/ToastContext';
 import { formatPrice } from '../../utils/format';
 import Spinner from '../../components/ui/Spinner';
+import usePageTitle from '../../hooks/usePageTitle';
 import styles from './AdminOrdersPage.module.css';
 
 const STATUSES = ['pending', 'shipped', 'delivered'];
 
 export default function AdminOrdersPage() {
+  usePageTitle('Orders · Admin');
   const addToast = useToast();
   const [orders, setOrders] = useState(null);
   const [savingId, setSavingId] = useState(null);

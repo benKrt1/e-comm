@@ -5,11 +5,13 @@ import { useToast } from '../context/ToastContext';
 import { getErrorMessage } from '../api/axios';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
+import usePageTitle from '../hooks/usePageTitle';
 import styles from './AuthPage.module.css';
 
 const EMAIL_RE = /^\S+@\S+\.\S+$/;
 
 export default function RegisterPage() {
+  usePageTitle('Create account');
   const { register, status } = useAuth();
   const addToast = useToast();
 

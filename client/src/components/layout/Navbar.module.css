@@ -82,3 +82,24 @@
   line-height: 18px;
   text-align: center;
 }
+
+@media (max-width: 640px) {
+  .nav {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .brand {
+    font-size: 1.125rem;
+  }
+
+  .links {
+    gap: var(--space-4);
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .links {
+    gap: var(--space-3);
+  }
+}

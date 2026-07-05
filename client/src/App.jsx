@@ -29,34 +29,39 @@ export default function App() {
 
   return (
     <>
+      <a href="#main-content" className="skip-link">
+        Skip to content
+      </a>
       <Navbar />
-      {/* mode="wait": the leaving page finishes its exit animation before
-          the next one enters — keyed by pathname so route changes trigger it. */}
-      <AnimatePresence mode="wait">
-        <Routes location={location} key={location.pathname}>
-          <Route path="/" element={page(<HomePage />)} />
-          <Route path="/products" element={page(<CatalogPage />)} />
-          <Route path="/products/:slug" element={page(<ProductPage />)} />
-          <Route path="/cart" element={page(<CartPage />)} />
-          <Route path="/login" element={page(<LoginPage />)} />
-          <Route path="/register" element={page(<RegisterPage />)} />
-          <Route element={<ProtectedRoute routesLocation={location} />}>
-            <Route path="/profile" element={page(<ProfilePage />)} />
-            <Route path="/checkout" element={page(<CheckoutPage />)} />
-            <Route path="/orders" element={page(<OrdersPage />)} />
-            <Route path="/orders/:id" element={page(<OrderPage />)} />
-            <Route path="/wishlist" element={page(<WishlistPage />)} />
-          </Route>
-          <Route element={<AdminRoute routesLocation={location} />}>
-            <Route path="/admin" element={page(<AdminDashboardPage />)} />
-            <Route path="/admin/products" element={page(<AdminProductsPage />)} />
-            <Route path="/admin/products/new" element={page(<AdminProductFormPage />)} />
-            <Route path="/admin/products/:id/edit" element={page(<AdminProductFormPage />)} />
-            <Route path="/admin/orders" element={page(<AdminOrdersPage />)} />
-          </Route>
-          <Route path="*" element={page(<NotFoundPage />)} />
-        </Routes>
-      </AnimatePresence>
+      <div id="main-content" tabIndex={-1}>
+        {/* mode="wait": the leaving page finishes its exit animation before
+            the next one enters — keyed by pathname so route changes trigger it. */}
+        <AnimatePresence mode="wait">
+          <Routes location={location} key={location.pathname}>
+            <Route path="/" element={page(<HomePage />)} />
+            <Route path="/products" element={page(<CatalogPage />)} />
+            <Route path="/products/:slug" element={page(<ProductPage />)} />
+            <Route path="/cart" element={page(<CartPage />)} />
+            <Route path="/login" element={page(<LoginPage />)} />
+            <Route path="/register" element={page(<RegisterPage />)} />
+            <Route element={<ProtectedRoute routesLocation={location} />}>
+              <Route path="/profile" element={page(<ProfilePage />)} />
+              <Route path="/checkout" element={page(<CheckoutPage />)} />
+              <Route path="/orders" element={page(<OrdersPage />)} />
+              <Route path="/orders/:id" element={page(<OrderPage />)} />
+              <Route path="/wishlist" element={page(<WishlistPage />)} />
+            </Route>
+            <Route element={<AdminRoute routesLocation={location} />}>
+              <Route path="/admin" element={page(<AdminDashboardPage />)} />
+              <Route path="/admin/products" element={page(<AdminProductsPage />)} />
+              <Route path="/admin/products/new" element={page(<AdminProductFormPage />)} />
+              <Route path="/admin/products/:id/edit" element={page(<AdminProductFormPage />)} />
+              <Route path="/admin/orders" element={page(<AdminOrdersPage />)} />
+            </Route>
+            <Route path="*" element={page(<NotFoundPage />)} />
+          </Routes>
+        </AnimatePresence>
+      </div>
     </>
   );
 }

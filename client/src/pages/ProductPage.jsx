@@ -12,6 +12,7 @@ import ProductGrid from '../components/products/ProductGrid';
 import WishlistButton from '../components/wishlist/WishlistButton';
 import ReviewsSection from '../components/reviews/ReviewsSection';
 import placeholder from '../assets/placeholder-product.svg';
+import usePageTitle from '../hooks/usePageTitle';
 import styles from './ProductPage.module.css';
 
 export default function ProductPage() {
@@ -21,6 +22,7 @@ export default function ProductPage() {
   const [adding, setAdding] = useState(false);
 
   const [data, setData] = useState({ product: null, related: [], loading: true, error: null });
+  usePageTitle(data.product?.name);
   const [activeImage, setActiveImage] = useState(0);
   const [zoomOrigin, setZoomOrigin] = useState('50% 50%');
   const [quantity, setQuantity] = useState(1);
