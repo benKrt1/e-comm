@@ -1,0 +1,22 @@
+/* Extracted from CatalogPage.module.css — the sort control is its own
+   client component in the Next.js app. */
+.sort {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.sort select {
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.sort select:focus {
+  border-color: var(--color-accent);
+  outline: none;
+}

@@ -1,0 +1,67 @@
+.hero {
+  min-height: 70dvh;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--space-16) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-6);
+}
+
+.title {
+  font-size: clamp(2.75rem, 7vw, 5rem);
+}
+
+.accent {
+  color: var(--color-accent);
+}
+
+.tagline {
+  color: var(--color-text-muted);
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  max-width: 44ch;
+}
+
+.cta {
+  display: inline-block;
+  padding: var(--space-3) var(--space-8);
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
+  font-weight: 600;
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.cta:hover {
+  background: var(--color-accent-strong);
+  transform: translateY(-2px);
+}
+
+.featured {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 0 var(--space-6) var(--space-16);
+}
+
+.featuredHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--space-6);
+}
+
+.featuredHeader h2 {
+  font-size: 1.75rem;
+}
+
+.allLink {
+  color: var(--color-accent);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.allLink:hover {
+  text-decoration: underline;
+}
