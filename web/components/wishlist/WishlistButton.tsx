@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useWishlist } from '@/components/providers/WishlistProvider';
 import { useToast } from '@/components/providers/ToastProvider';
-import { getErrorMessage } from '@/lib/errors';
+import { getErrorMessage } from '@/lib/api';
 import styles from './WishlistButton.module.css';
 
 /**

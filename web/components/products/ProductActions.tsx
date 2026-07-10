@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useCart } from '@/components/providers/CartProvider';
 import { useToast } from '@/components/providers/ToastProvider';
-import { getErrorMessage } from '@/lib/errors';
+import { getErrorMessage } from '@/lib/api';
 import Button from '@/components/ui/Button';
 import WishlistButton from '@/components/wishlist/WishlistButton';
 import type { SerializedProduct } from '@/types';

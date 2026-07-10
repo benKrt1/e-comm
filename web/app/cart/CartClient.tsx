@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { AnimatePresence } from 'framer-motion';
 import { useCart } from '@/components/providers/CartProvider';
 import { useToast } from '@/components/providers/ToastProvider';
-import { getErrorMessage } from '@/lib/errors';
+import { getErrorMessage } from '@/lib/api';
 import { formatPrice } from '@/lib/format';
 import Button from '@/components/ui/Button';
 import Spinner from '@/components/ui/Spinner';

@@ -2,8 +2,7 @@
 
 import { useState, useReducer, useEffect } from 'react';
 import Link from 'next/link';
-import api from '@/lib/api';
-import { getErrorMessage } from '@/lib/api';
+import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/providers/ToastProvider';
 import Rating from '@/components/ui/Rating';
