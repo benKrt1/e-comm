@@ -1,12 +1,14 @@
 {
-  "name": "web",
-  "version": "0.1.0",
+  "name": "nordcart-web",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed": "tsx scripts/seed.ts",
+    "seed:destroy": "tsx scripts/seed.ts --destroy"
   },
   "dependencies": {
     "@stripe/react-stripe-js": "^6.7.0",

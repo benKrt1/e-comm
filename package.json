@@ -1,18 +1,16 @@
 {
   "name": "nordcart",
-  "version": "1.0.0",
-  "description": "NordCart — a modern, animated e-commerce app. React + Express + MongoDB + Stripe.",
+  "version": "2.0.0",
+  "description": "NordCart — a modern, animated full-stack e-commerce app. Next.js + MongoDB + Stripe.",
   "private": true,
   "scripts": {
-    "dev": "concurrently -n server,client -c cyan,magenta \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
-    "dev:web": "npm run dev --prefix web",
-    "seed": "npm run seed --prefix server",
-    "seed:destroy": "npm run seed:destroy --prefix server",
-    "lint": "npm run lint --prefix server && npm run lint --prefix client"
+    "dev": "npm run dev --prefix web",
+    "build": "npm run build --prefix web",
+    "start": "npm run start --prefix web",
+    "seed": "npm run seed --prefix web",
+    "seed:destroy": "npm run seed:destroy --prefix web",
+    "lint": "npm run lint --prefix web"
   },
   "author": "Arben Kurti",
-  "license": "MIT",
-  "devDependencies": {
-    "concurrently": "^9.1.2"
-  }
+  "license": "MIT"
 }

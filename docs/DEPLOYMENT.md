@@ -1,71 +1,59 @@
-# Deploying NordCart — Vercel + Render + MongoDB Atlas
+# Deploying NordCart — Vercel + MongoDB Atlas
 
-The storefront (Vite build) goes to **Vercel**, the API to **Render**, the database to **MongoDB Atlas**. All three have free tiers that fit this project.
+NordCart is a single full-stack **Next.js** app (App Router). It deploys as **one Vercel project**; the database lives on **MongoDB Atlas**. Both have free tiers that fit this project. There is no separate API service — the old Express backend is now Server Actions and server-component data functions running inside the same deployment, so there is no CORS and no cross-site cookie to configure.
 
 ## 1. MongoDB Atlas
 
 1. Create a free (M0) cluster and a database user (Database Access → Add user, password auth).
-2. **Network Access → Add IP → `0.0.0.0/0`** ("allow from anywhere"). Render's free-tier egress IPs rotate, and so do most home ISP addresses — single-IP allowlists break both local dev and the deployed API. Credentials still gate access.
-3. Copy the connection string (Database → Connect → Drivers) — it becomes `MONGO_URI`.
+2. **Network Access → Add IP → `0.0.0.0/0`** ("allow from anywhere"). Vercel's serverless egress IPs are not stable, so a single-IP allowlist breaks the deployment. Credentials still gate access.
+3. Copy the connection string (Database → Connect → Drivers) — it becomes `MONGODB_URI`.
 4. The checkout flow uses multi-document transactions, which need a replica set: **Atlas clusters always are one** — nothing to configure. (A local standalone `mongod` cannot run checkout.)
 
-## 2. API on Render
+## 2. The Vercel project
 
-Create a **Web Service** from this repo:
+Import the repo as a new project:
 
 | Setting | Value |
 | --- | --- |
-| Root directory | `server` |
-| Build command | `npm install` |
-| Start command | `npm start` |
-| Health check path | `/api/v1/health` |
+| Root directory | `web` |
+| Framework preset | Next.js (auto-detected) |
 
-Environment variables:
+Vercel runs `next build` and serves the app; no `vercel.json` is needed.
+
+Environment variables (Project → Settings → Environment Variables):
 
 | Key | Value |
 | --- | --- |
-| `NODE_ENV` | `production` (switches cookies to `Secure` + `SameSite=None` for the cross-site client) |
-| `MONGO_URI` | the Atlas connection string |
-| `JWT_SECRET` | long random string — `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"` |
-| `JWT_EXPIRES_IN` | `7d` |
-| `CLIENT_URL` | your Vercel URL (e.g. `https://nordcart.vercel.app`) — CORS allows exactly this origin |
+| `MONGODB_URI` | the Atlas connection string |
+| `AUTH_SECRET` | session encryption secret — generate with `npx auth secret` (or `openssl rand -base64 32`) |
 | `STRIPE_SECRET_KEY` | `sk_test_…` |
-| `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | from the Cloudinary dashboard (the cloud name is the segment after `@` in `CLOUDINARY_URL`) |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | `pk_test_…` (public by design) |
+| `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | from the Cloudinary dashboard |
 
-Notes already handled in code: `trust proxy` is set (rate limiting keys on real client IPs behind Render's proxy), and the health endpoint doubles as a keep-awake ping target for free-tier spin-down.
+`AUTH_TRUST_HOST` is **not** needed on Vercel (the platform is trusted automatically). Auth.js sets a secure session cookie on the app's own origin — same-site, so nothing extra to configure.
 
 ## 3. Seed the production database
 
 Run locally against the production connection string (mind the shell history — or export the vars):
 
 ```bash
-MONGO_URI='<atlas-uri>' ADMIN_SEED_PASSWORD='<strong>' DEMO_SEED_PASSWORD='<strong>' npm run seed
+cd web
+MONGODB_URI='<atlas-uri>' ADMIN_SEED_PASSWORD='<strong>' DEMO_SEED_PASSWORD='<strong>' npm run seed
 ```
 
 Never ship the default seed passwords to a public deployment.
 
-## 4. Storefront on Vercel
+## 4. Post-deploy checklist
 
-Import the repo as a new project:
+- [ ] The homepage and `/products` render server-side (view source shows product HTML)
+- [ ] Register / login works and **survives a hard refresh** (Auth.js JWT session cookie)
+- [ ] Guest cart merges into the account on login
+- [ ] Checkout with `4242 4242 4242 4242` completes and the order appears under `/orders`; a double-submit returns the same order (idempotent on the payment id)
+- [ ] A verified purchaser can leave one review; the product rating updates
+- [ ] Admin login (`admin@nordcart.se`) → product image upload works (Cloudinary vars); a non-admin visiting `/admin` is redirected home
 
-| Setting | Value |
-| --- | --- |
-| Root directory | `client` |
-| Framework preset | Vite |
+## Notes on the architecture
 
-Environment variables:
-
-| Key | Value |
-| --- | --- |
-| `VITE_API_URL` | `https://<your-render-service>.onrender.com/api/v1` |
-| `VITE_STRIPE_PUBLISHABLE_KEY` | `pk_test_…` |
-
-`client/vercel.json` (already in the repo) rewrites every path to `index.html` so deep links into the SPA work.
-
-## 5. Post-deploy checklist
-
-- [ ] `https://<render>/api/v1/health` returns `{ "success": true, … }`
-- [ ] Register/login works on the Vercel site and **survives a hard refresh** (if not: `CLIENT_URL` mismatch or `NODE_ENV` ≠ production — the cookie needs `SameSite=None; Secure` cross-site)
-- [ ] Checkout with `4242 4242 4242 4242` completes and the order appears under `/orders`
-- [ ] Admin login → product image upload works (Cloudinary vars)
-- [ ] First request after idle takes ~30–60 s: Render free tier spins down; the health-check ping or an external uptime pinger mitigates it
+- **No webhook.** Orders are created client-driven after a confirmed PaymentIntent and are idempotent on the payment id (unique index). This avoids webhook setup; the trade-off is documented in `web/actions/orders.ts`.
+- **Cloudinary uploads are signed and direct.** The server only issues a short-lived signature (`getUploadSignatureAction`); image bytes go browser → Cloudinary and never touch the serverless function.
+- **Rate limiting** is intentionally omitted at first (bcrypt cost throttles brute force; in-memory counters are useless across serverless instances). Add `@upstash/ratelimit` on the login/register actions if the site sees real traffic.

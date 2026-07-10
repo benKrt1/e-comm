@@ -1,9 +1,8 @@
-import 'dotenv/config';
 import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 import mongoose from 'mongoose';
-import connectDB from '../config/db.js';
-import Product from '../models/Product.js';
-import User from '../models/User.js';
+import Product from '@/models/Product';
+import User from '@/models/User';
 
 /**
  * Database seeder.
@@ -15,13 +14,21 @@ import User from '../models/User.js';
  *   demo@nordcart.se  / DEMO_SEED_PASSWORD   (default: Demo1234!)
  */
 
+// Standalone script: Next.js isn't loading env for us, so read .env.local.
+try {
+  process.loadEnvFile(fileURLToPath(new URL('../.env.local', import.meta.url)));
+} catch {
+  // Env may already be provided by the shell (e.g. production seeding).
+}
+
 const seed = async () => {
-  if (!process.env.MONGO_URI) {
-    console.error('✖ MONGO_URI is not set. Copy server/.env.example to server/.env first.');
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    console.error('✖ MONGODB_URI is not set. Copy web/.env.example to web/.env.local first.');
     process.exit(1);
   }
 
-  await connectDB(process.env.MONGO_URI);
+  await mongoose.connect(uri);
 
   const destroyOnly = process.argv.includes('--destroy');
 
@@ -33,7 +40,7 @@ const seed = async () => {
 
   if (!destroyOnly) {
     const productsJson = await readFile(new URL('./products.json', import.meta.url), 'utf-8');
-    const products = JSON.parse(productsJson);
+    const products = JSON.parse(productsJson) as Record<string, unknown>[];
 
     // create() (not insertMany) so the pre-save hooks run: slug generation
     // for products, password hashing for users.
@@ -62,7 +69,7 @@ const seed = async () => {
 };
 
 seed().catch(async (err) => {
-  console.error('✖ Seeding failed:', err.message);
+  console.error('✖ Seeding failed:', err instanceof Error ? err.message : err);
   await mongoose.disconnect();
   process.exit(1);
 });
