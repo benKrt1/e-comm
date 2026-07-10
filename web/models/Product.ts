@@ -1,8 +1,8 @@
 import mongoose, { Schema, type Model } from 'mongoose';
+import { PRODUCT_CATEGORIES, type ProductCategory } from '@/lib/categories';
 
-export const PRODUCT_CATEGORIES = ['audio', 'keyboards', 'smart-home', 'desk', 'wearables', 'accessories'] as const;
-
-export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number];
+export { PRODUCT_CATEGORIES };
+export type { ProductCategory };
 
 export interface ProductImage {
   url: string;

@@ -1,4 +1,4 @@
-import type { ProductCategory } from '@/models/Product';
+import type { ProductCategory } from '@/lib/categories';
 import type { OrderStatus } from '@/models/Order';
 
 /**
