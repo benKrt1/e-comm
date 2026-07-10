@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useRef, type ChangeEvent, type SubmitEvent } from 'react';
+import { useRef, useState, type ChangeEvent, type SubmitEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import api, { getErrorMessage } from '@/lib/api';
 import { useToast } from '@/components/providers/ToastProvider';
-import { getErrorMessage } from '@/lib/errors';
-import { createProductAction, updateProductAction, getUploadSignatureAction } from '@/actions/admin';
 import { PRODUCT_CATEGORIES } from '@/lib/categories';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -19,9 +18,8 @@ interface ProductImage {
 
 /** Upload one file straight to Cloudinary using a server-issued signature. */
 async function uploadToCloudinary(file: File): Promise<string> {
-  const sig = await getUploadSignatureAction();
-  if (!sig.success || !sig.data) throw new Error(sig.message);
-  const { timestamp, signature, apiKey, cloudName, folder, allowedFormats } = sig.data;
+  const { data } = await api.post('/admin/uploads/signature');
+  const { timestamp, signature, apiKey, cloudName, folder, allowedFormats } = data.data;
 
   const body = new FormData();
   body.append('file', file);
@@ -66,7 +64,6 @@ export default function AdminProductForm({ product }: { product?: SerializedProd
     setUploading(true);
     try {
       const url = await uploadToCloudinary(file);
-      // Alt defaults to the product name; editable per image below.
       setImages((current) => [...current, { url, alt: form.name || 'Product photo' }]);
       addToast('Image uploaded');
     } catch (err) {
@@ -92,20 +89,21 @@ export default function AdminProductForm({ product }: { product?: SerializedProd
     const payload = {
       name: form.name,
       brand: form.brand,
-      category: form.category as SerializedProduct['category'],
+      category: form.category,
       price: Math.round(Number(form.price) * 100), // kronor → integer öre
       countInStock: Number(form.countInStock),
       description: form.description,
       isFeatured: form.isFeatured,
       images,
     };
-    const result = product ? await updateProductAction(product._id, payload) : await createProductAction(payload);
-    if (result.success) {
-      addToast(result.message);
+    try {
+      const { data } = product
+        ? await api.put(`/admin/products/${product._id}`, payload)
+        : await api.post('/admin/products', payload);
+      addToast(data.message);
       router.push('/admin/products');
-      router.refresh();
-    } else {
-      addToast(result.message, 'error');
+    } catch (err) {
+      addToast(getErrorMessage(err), 'error');
       setSaving(false);
     }
   };
@@ -160,11 +158,7 @@ export default function AdminProductForm({ product }: { product?: SerializedProd
         </div>
 
         <label className={styles.checkbox}>
-          <input
-            type="checkbox"
-            checked={form.isFeatured}
-            onChange={(e) => setForm((f) => ({ ...f, isFeatured: e.target.checked }))}
-          />
+          <input type="checkbox" checked={form.isFeatured} onChange={(e) => setForm((f) => ({ ...f, isFeatured: e.target.checked }))} />
           Featured on the homepage
         </label>
 
@@ -175,21 +169,8 @@ export default function AdminProductForm({ product }: { product?: SerializedProd
               <li key={image.url} className={styles.imageRow}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={image.url} alt="" />
-                <Input
-                  id={`alt-${index}`}
-                  label="Alt text"
-                  value={image.alt}
-                  onChange={setAlt(index)}
-                  required
-                  minLength={2}
-                  maxLength={200}
-                />
-                <button
-                  type="button"
-                  className={styles.removeImage}
-                  onClick={() => removeImage(index)}
-                  aria-label={`Remove image ${index + 1}`}
-                >
+                <Input id={`alt-${index}`} label="Alt text" value={image.alt} onChange={setAlt(index)} required minLength={2} maxLength={200} />
+                <button type="button" className={styles.removeImage} onClick={() => removeImage(index)} aria-label={`Remove image ${index + 1}`}>
                   ×
                 </button>
               </li>
@@ -197,14 +178,7 @@ export default function AdminProductForm({ product }: { product?: SerializedProd
           </ul>
           <label className={styles.uploadButton}>
             {uploading ? 'Uploading…' : '+ Upload image'}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleUpload}
-              disabled={uploading}
-              className={styles.fileInput}
-            />
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleUpload} disabled={uploading} className={styles.fileInput} />
           </label>
         </section>
 

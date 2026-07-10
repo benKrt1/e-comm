@@ -1,24 +1,56 @@
-import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import { requireUser } from '@/lib/session';
-import { getOrderById } from '@/lib/data/orders';
+'use client';
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import api, { getErrorMessage } from '@/lib/api';
 import { formatPrice } from '@/lib/format';
+import Spinner from '@/components/ui/Spinner';
 import OrderItemImage from './OrderItemImage';
+import type { SerializedOrder } from '@/types';
 import styles from './OrderPage.module.css';
 
-export const metadata: Metadata = { title: 'Order details' };
+const STATUS_LABELS: Record<string, string> = { pending: 'Being prepared', shipped: 'Shipped', delivered: 'Delivered' };
 
-const STATUS_LABELS: Record<string, string> = {
-  pending: 'Being prepared',
-  shipped: 'Shipped',
-  delivered: 'Delivered',
-};
+export default function OrderPage() {
+  const { id } = useParams<{ id: string }>();
+  const [state, setState] = useState<{ order: SerializedOrder | null; loading: boolean; error: string | null }>({
+    order: null,
+    loading: true,
+    error: null,
+  });
 
-export default async function OrderPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const user = await requireUser();
-  const order = await getOrderById(id, user._id.toString(), user.role === 'admin');
-  if (!order) notFound();
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get(`/orders/${id}`)
+      .then(({ data }) => !cancelled && setState({ order: data.data.order, loading: false, error: null }))
+      .catch((err) => !cancelled && setState({ order: null, loading: false, error: getErrorMessage(err) }));
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  const { order, loading, error } = state;
+
+  if (loading) {
+    return (
+      <main className={styles.page} aria-busy="true">
+        <Spinner fullPage />
+      </main>
+    );
+  }
+
+  if (error || !order) {
+    return (
+      <main className={`${styles.page} ${styles.error}`}>
+        <h1>{error ?? 'Order not found'}</h1>
+        <Link href="/orders" className={styles.backLink}>
+          ← Your orders
+        </Link>
+      </main>
+    );
+  }
 
   const placed = new Date(order.createdAt).toLocaleDateString('sv-SE');
 
@@ -39,7 +71,6 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
         <section aria-labelledby="items-heading">
           <h2 id="items-heading">Items</h2>
           <ul className={styles.items}>
-            {/* key: product id is unique per order line — the cart dedupes by product */}
             {order.orderItems.map((item) => (
               <li key={item.product} className={styles.item}>
                 <OrderItemImage src={item.image} />

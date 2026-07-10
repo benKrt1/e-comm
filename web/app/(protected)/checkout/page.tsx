@@ -1,79 +1,111 @@
-import type { Metadata } from 'next';
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
-import { requireUser } from '@/lib/session';
-import { loadCheckoutCart, priceCart, CheckoutError } from '@/lib/checkout';
-import getStripe from '@/lib/stripe';
+import { useRouter } from 'next/navigation';
+import { Elements } from '@stripe/react-stripe-js';
+import type { StripeElementsOptions } from '@stripe/stripe-js';
+import api, { getErrorMessage } from '@/lib/api';
+import { getStripe } from '@/lib/stripe-client';
+import { useCart } from '@/components/providers/CartProvider';
 import { formatPrice } from '@/lib/format';
+import Spinner from '@/components/ui/Spinner';
 import CheckoutForm from './CheckoutForm';
 import styles from './CheckoutPage.module.css';
 
-export const metadata: Metadata = { title: 'Checkout' };
+// Mirrors globals.css — Stripe renders the PaymentElement inside an iframe,
+// so CSS variables can't reach it; the appearance API is the only way in.
+const appearance: StripeElementsOptions['appearance'] = {
+  theme: 'night',
+  variables: {
+    colorPrimary: '#5eead4',
+    colorBackground: '#191c23',
+    colorText: '#e8eaf0',
+    colorDanger: '#f87171',
+    borderRadius: '10px',
+    fontFamily: 'Inter, system-ui, sans-serif',
+  },
+};
+
+interface Totals {
+  itemsPrice: number;
+  shippingPrice: number;
+  taxPrice: number;
+  totalPrice: number;
+}
 
 /**
- * Checkout is server-driven: this RSC prices the (server-side) cart, opens a
- * Stripe PaymentIntent, and hands the clientSecret + totals to the client
- * form. A cart change after this loads makes the amounts diverge — the
- * placeOrder action's amount-mismatch check is the backstop (same trade-off
- * as the old create-on-mount flow).
+ * Fetches the PaymentIntent and renders the form + summary. Keyed by a
+ * signature of the cart contents (see CheckoutPage below) so a cart change
+ * mid-checkout remounts this — resetting state via React keys.
  */
-export default async function CheckoutPage() {
-  const user = await requireUser();
+function CheckoutFlow({
+  items,
+  onPlaced,
+}: {
+  items: ReturnType<typeof useCart>['items'];
+  onPlaced: () => void;
+}) {
+  const router = useRouter();
+  const [intent, setIntent] = useState<{ clientSecret: string; totals: Totals } | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  let cart;
-  try {
-    cart = await loadCheckoutCart(user);
-  } catch (err) {
-    if (err instanceof CheckoutError) {
-      // Empty or unbuyable cart — send the user back to fix it.
-      if (err.message === 'Your cart is empty') redirect('/cart');
-      return (
-        <main className={`${styles.page} ${styles.error}`}>
-          <h1>Checkout unavailable</h1>
-          <p>{err.message}</p>
-          <Link href="/cart" className={styles.backLink}>
-            ← Back to your cart
-          </Link>
-        </main>
-      );
-    }
-    throw err;
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .post('/orders/payment-intent')
+      .then(({ data }) => !cancelled && setIntent(data.data))
+      .catch((err) => !cancelled && setError(getErrorMessage(err)));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handlePlaced = (orderId: string) => {
+    onPlaced();
+    router.replace(`/orders/${orderId}`);
+  };
+
+  if (error) {
+    return (
+      <main className={`${styles.page} ${styles.error}`}>
+        <h1>Checkout unavailable</h1>
+        <p>{error}</p>
+        <Link href="/cart" className={styles.backLink}>
+          ← Back to your cart
+        </Link>
+      </main>
+    );
   }
 
-  const totals = priceCart(cart);
+  if (!intent) {
+    return (
+      <main className={styles.page} aria-busy="true">
+        <Spinner fullPage />
+      </main>
+    );
+  }
 
-  const intent = await getStripe().paymentIntents.create({
-    amount: totals.totalPrice,
-    currency: 'sek',
-    // allow_redirects 'never': redirect-based methods (Klarna & co) would
-    // demand a return_url on every confirm — this checkout is on-page only.
-    automatic_payment_methods: { enabled: true, allow_redirects: 'never' },
-    // Ties the intent to this user so placeOrder can verify ownership.
-    metadata: { userId: user._id.toString() },
-  });
-
-  const summaryItems = cart.map((item) => ({
-    id: item.product._id.toString(),
-    name: item.product.name,
-    quantity: item.quantity,
-    lineTotal: item.product.price * item.quantity,
-  }));
+  const { totals } = intent;
 
   return (
     <main className={styles.page}>
       <h1 className={styles.title}>Checkout</h1>
       <div className={styles.layout}>
-        <CheckoutForm clientSecret={intent.client_secret!} totalPrice={totals.totalPrice} />
+        {/* key: a new clientSecret must remount Elements — it's immutable per instance */}
+        <Elements key={intent.clientSecret} stripe={getStripe()} options={{ clientSecret: intent.clientSecret, appearance }}>
+          <CheckoutForm totalPrice={totals.totalPrice} onPlaced={handlePlaced} />
+        </Elements>
 
         <aside className={styles.summary} aria-label="Order summary">
           <h2>Summary</h2>
           <ul className={styles.items}>
-            {summaryItems.map((item) => (
-              <li key={item.id}>
+            {items.map((item) => (
+              <li key={item.product._id}>
                 <span className={styles.itemName}>
-                  {item.name} × {item.quantity}
+                  {item.product.name} × {item.quantity}
                 </span>
-                <span>{formatPrice(item.lineTotal)}</span>
+                <span>{formatPrice(item.product.price * item.quantity)}</span>
               </li>
             ))}
           </ul>
@@ -99,4 +131,38 @@ export default async function CheckoutPage() {
       </div>
     </main>
   );
+}
+
+export default function CheckoutPage() {
+  const router = useRouter();
+  const { items, status: cartStatus, clearCart } = useCart();
+  // Set before the cart empties on success — stops the guard below from
+  // bouncing to /cart between clearCart() and navigation.
+  const [placed, setPlaced] = useState(false);
+
+  useEffect(() => {
+    if (cartStatus === 'ready' && items.length === 0 && !placed) {
+      router.replace('/cart');
+    }
+  }, [cartStatus, items.length, placed, router]);
+
+  if (cartStatus === 'loading' || placed || items.length === 0) {
+    return (
+      <main className={styles.page} aria-busy="true">
+        <Spinner fullPage />
+      </main>
+    );
+  }
+
+  const handlePlaced = () => {
+    setPlaced(true);
+    clearCart(); // server already emptied it; this syncs the client state
+  };
+
+  // Remount the flow if cart contents change while checking out; the fresh
+  // intent replaces the stale-amount one. The server's amount-mismatch 409
+  // is the real backstop.
+  const cartKey = items.map((item) => `${item.product._id}:${item.quantity}`).join('|');
+
+  return <CheckoutFlow key={cartKey} items={items} onPlaced={handlePlaced} />;
 }

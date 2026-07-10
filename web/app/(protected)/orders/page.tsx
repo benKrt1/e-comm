@@ -1,21 +1,50 @@
-import type { Metadata } from 'next';
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { requireUser } from '@/lib/session';
-import { getMyOrders } from '@/lib/data/orders';
+import api, { getErrorMessage } from '@/lib/api';
 import { formatPrice } from '@/lib/format';
+import Spinner from '@/components/ui/Spinner';
+import type { SerializedOrder } from '@/types';
 import styles from './OrdersPage.module.css';
 
-export const metadata: Metadata = { title: 'Your orders' };
+const STATUS_LABELS: Record<string, string> = { pending: 'Being prepared', shipped: 'Shipped', delivered: 'Delivered' };
 
-const STATUS_LABELS: Record<string, string> = {
-  pending: 'Being prepared',
-  shipped: 'Shipped',
-  delivered: 'Delivered',
-};
+export default function OrdersPage() {
+  const [state, setState] = useState<{ orders: SerializedOrder[]; loading: boolean; error: string | null }>({
+    orders: [],
+    loading: true,
+    error: null,
+  });
 
-export default async function OrdersPage() {
-  const user = await requireUser();
-  const orders = await getMyOrders(user._id.toString());
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get('/orders/mine')
+      .then(({ data }) => !cancelled && setState({ orders: data.data.orders, loading: false, error: null }))
+      .catch((err) => !cancelled && setState({ orders: [], loading: false, error: getErrorMessage(err) }));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const { orders, loading, error } = state;
+
+  if (loading) {
+    return (
+      <main className={styles.page} aria-busy="true">
+        <Spinner fullPage />
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className={`${styles.page} ${styles.empty}`}>
+        <h1>{error}</h1>
+      </main>
+    );
+  }
 
   if (orders.length === 0) {
     return (

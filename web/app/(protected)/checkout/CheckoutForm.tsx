@@ -1,41 +1,31 @@
 'use client';
 
 import { useState, type ChangeEvent, type SubmitEvent } from 'react';
-import { useRouter } from 'next/navigation';
-import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import type { StripeElementsOptions } from '@stripe/stripe-js';
-import { getStripe } from '@/lib/stripe-client';
-import { useCart } from '@/components/providers/CartProvider';
+import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import api, { getErrorMessage } from '@/lib/api';
 import { useToast } from '@/components/providers/ToastProvider';
-import { placeOrderAction } from '@/actions/orders';
 import { formatPrice } from '@/lib/format';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import styles from './CheckoutPage.module.css';
 
-// Mirrors globals.css — Stripe renders the PaymentElement inside an iframe,
-// so CSS variables can't reach it; the appearance API is the only way in.
-const appearance: StripeElementsOptions['appearance'] = {
-  theme: 'night',
-  variables: {
-    colorPrimary: '#5eead4',
-    colorBackground: '#191c23',
-    colorText: '#e8eaf0',
-    colorDanger: '#f87171',
-    borderRadius: '10px',
-    fontFamily: 'Inter, system-ui, sans-serif',
-  },
-};
-
 const EMPTY_ADDRESS = { fullName: '', street: '', postalCode: '', city: '', country: 'Sweden' };
 
-/** Inner form — must live inside <Elements> to use the Stripe hooks. */
-function PaymentForm({ totalPrice }: { totalPrice: number }) {
+/**
+ * Inner form — must live inside <Elements> to use the Stripe hooks. Charges
+ * the card, then turns the paid intent into an order via POST /orders (which
+ * is idempotent on the payment id, so retries after a failed order are safe).
+ */
+export default function CheckoutForm({
+  totalPrice,
+  onPlaced,
+}: {
+  totalPrice: number;
+  onPlaced: (orderId: string) => void;
+}) {
   const stripe = useStripe();
   const elements = useElements();
-  const router = useRouter();
   const addToast = useToast();
-  const { clearCart } = useCart();
   const [address, setAddress] = useState(EMPTY_ADDRESS);
   const [paying, setPaying] = useState(false);
 
@@ -48,8 +38,6 @@ function PaymentForm({ totalPrice }: { totalPrice: number }) {
 
     setPaying(true);
     // 1. Charge the card. redirect:'if_required' keeps card payments on-page.
-    // Declines resolve with { error }; a rejected promise means Stripe.js
-    // itself failed (network/config) — catch it or the button spins forever.
     let error;
     let paymentIntent;
     try {
@@ -60,7 +48,7 @@ function PaymentForm({ totalPrice }: { totalPrice: number }) {
       return;
     }
     // An "error" whose intent already succeeded means we're retrying after a
-    // failed order attempt — fall through to the (idempotent) order creation.
+    // failed order POST — fall through to the (idempotent) order creation.
     if (error && error.payment_intent?.status !== 'succeeded') {
       addToast(error.message ?? 'Payment failed', 'error');
       setPaying(false);
@@ -68,19 +56,16 @@ function PaymentForm({ totalPrice }: { totalPrice: number }) {
     }
     const intentId = paymentIntent?.id ?? error!.payment_intent!.id;
 
-    // 2. Turn the paid intent into an order (idempotent on the payment id).
-    const result = await placeOrderAction(intentId, address);
-    if (!result.success || !result.orderId) {
-      addToast(result.message, 'error');
+    // 2. Turn the paid intent into an order.
+    try {
+      const { data } = await api.post('/orders', { paymentIntentId: intentId, shippingAddress: address });
+      addToast(data.message);
+      onPlaced(data.data.order._id);
+    } catch (err) {
+      // Payment went through but the order failed — retryable (idempotent).
+      addToast(getErrorMessage(err), 'error');
       setPaying(false);
-      return;
     }
-
-    // Server already emptied the cart — sync client state, then navigate.
-    await clearCart().catch(() => {});
-    addToast('Order placed — thank you!');
-    router.replace(`/orders/${result.orderId}`);
-    router.refresh();
   };
 
   return (
@@ -106,13 +91,5 @@ function PaymentForm({ totalPrice }: { totalPrice: number }) {
       </Button>
       <p className={styles.testHint}>Test mode — use card 4242 4242 4242 4242, any future expiry, any CVC.</p>
     </form>
-  );
-}
-
-export default function CheckoutForm({ clientSecret, totalPrice }: { clientSecret: string; totalPrice: number }) {
-  return (
-    <Elements stripe={getStripe()} options={{ clientSecret, appearance }}>
-      <PaymentForm totalPrice={totalPrice} />
-    </Elements>
   );
 }

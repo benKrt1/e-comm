@@ -1,15 +1,19 @@
-import type { Metadata } from 'next';
+'use client';
+
 import Link from 'next/link';
-import { requireUser } from '@/lib/session';
+import { useAuth } from '@/context/AuthContext';
+import { useCart } from '@/components/providers/CartProvider';
+import { useWishlist } from '@/components/providers/WishlistProvider';
 import styles from './ProfilePage.module.css';
 
-export const metadata: Metadata = { title: 'Profile' };
+/** Account overview. Live stats come from the cart/wishlist providers. */
+export default function ProfilePage() {
+  const { user } = useAuth();
+  const { itemCount } = useCart();
+  const { count: wishlistCount } = useWishlist();
 
-/** Account overview. Stats read live from the user document server-side. */
-export default async function ProfilePage() {
-  const user = await requireUser();
-  const itemCount = user.cart.reduce((sum, item) => sum + item.quantity, 0);
-  const wishlistCount = user.wishlist.length;
+  // ProtectedRoute guarantees an authenticated user before this renders.
+  if (!user) return null;
 
   return (
     <div className={styles.wrapper}>

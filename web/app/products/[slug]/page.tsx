@@ -22,14 +22,17 @@ interface ProductData {
 }
 
 export default function ProductPage() {
-  const params = useParams<{ slug: string }>();
-  const slug = params.slug;
+  const { slug } = useParams<{ slug: string }>();
+  // key={slug}: remount ProductView on navigation between products so its
+  // state resets to loading without a setState-in-effect.
+  return <ProductView key={slug} slug={slug} />;
+}
 
+function ProductView({ slug }: { slug: string }) {
   const [data, setData] = useState<ProductData>({ product: null, related: [], loading: true, error: null });
 
   useEffect(() => {
     let cancelled = false;
-    setData({ product: null, related: [], loading: true, error: null });
     window.scrollTo(0, 0); // related-product clicks land mid-scroll otherwise
     api
       .get(`/products/${slug}`)

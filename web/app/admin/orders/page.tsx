@@ -1,14 +1,64 @@
-import type { Metadata } from 'next';
+'use client';
+
+import { useEffect, useState, type ChangeEvent } from 'react';
 import Link from 'next/link';
-import { getAllOrders } from '@/lib/data/admin';
+import api, { getErrorMessage } from '@/lib/api';
+import { useToast } from '@/components/providers/ToastProvider';
 import { formatPrice } from '@/lib/format';
-import AdminOrderStatus from '@/components/admin/AdminOrderStatus';
+import Spinner from '@/components/ui/Spinner';
 import styles from '@/components/admin/AdminOrdersPage.module.css';
 
-export const metadata: Metadata = { title: 'Orders · Admin' };
+const STATUSES = ['pending', 'shipped', 'delivered'];
 
-export default async function AdminOrdersPage() {
-  const orders = await getAllOrders();
+interface AdminOrder {
+  _id: string;
+  orderItems: { quantity: number }[];
+  totalPrice: number;
+  isPaid: boolean;
+  status: string;
+  createdAt: string;
+  user: { name: string; email: string } | null;
+}
+
+export default function AdminOrdersPage() {
+  const addToast = useToast();
+  const [orders, setOrders] = useState<AdminOrder[] | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get('/admin/orders')
+      .then(({ data }) => !cancelled && setOrders(data.data.orders))
+      .catch(() => !cancelled && setOrders([]));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleStatusChange = (order: AdminOrder) => async (e: ChangeEvent<HTMLSelectElement>) => {
+    const status = e.target.value;
+    setSavingId(order._id);
+    try {
+      const { data } = await api.put(`/admin/orders/${order._id}/status`, { status });
+      setOrders((current) =>
+        (current ?? []).map((item) => (item._id === order._id ? { ...item, status: data.data.order.status } : item))
+      );
+      addToast(data.message);
+    } catch (err) {
+      addToast(getErrorMessage(err), 'error');
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  if (orders === null) {
+    return (
+      <main className={styles.page} aria-busy="true">
+        <Spinner fullPage />
+      </main>
+    );
+  }
 
   return (
     <main className={styles.page}>
@@ -38,6 +88,7 @@ export default async function AdminOrdersPage() {
             </thead>
             <tbody>
               {orders.map((order) => {
+                const itemCount = order.orderItems.reduce((sum, item) => sum + item.quantity, 0);
                 const placed = new Date(order.createdAt).toLocaleDateString('sv-SE');
                 return (
                   <tr key={order._id}>
@@ -49,19 +100,27 @@ export default async function AdminOrdersPage() {
                     </td>
                     <td>
                       <span className={styles.customer}>
-                        {order.userName ?? 'Deleted user'}
-                        <span className={styles.email}>{order.userEmail}</span>
+                        {order.user?.name ?? 'Deleted user'}
+                        <span className={styles.email}>{order.user?.email}</span>
                       </span>
                     </td>
-                    <td className={styles.num}>{order.itemCount}</td>
+                    <td className={styles.num}>{itemCount}</td>
                     <td className={styles.num}>{formatPrice(order.totalPrice)}</td>
                     <td>{order.isPaid ? '✓' : '—'}</td>
                     <td>
-                      <AdminOrderStatus
-                        orderId={order._id}
-                        status={order.status}
-                        label={`Status of order placed ${placed} by ${order.userName ?? 'deleted user'}`}
-                      />
+                      <select
+                        className={styles.status}
+                        value={order.status}
+                        onChange={handleStatusChange(order)}
+                        disabled={savingId === order._id}
+                        aria-label={`Status of order placed ${placed} by ${order.user?.name ?? 'deleted user'}`}
+                      >
+                        {STATUSES.map((status) => (
+                          <option key={status} value={status}>
+                            {status}
+                          </option>
+                        ))}
+                      </select>
                     </td>
                   </tr>
                 );

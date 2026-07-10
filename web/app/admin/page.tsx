@@ -1,15 +1,54 @@
-import type { Metadata } from 'next';
-import Link from 'next/link';
-import { getAdminStats } from '@/lib/data/admin';
-import { formatPrice } from '@/lib/format';
-import styles from '@/components/admin/AdminDashboardPage.module.css';
+'use client';
 
-export const metadata: Metadata = { title: 'Admin' };
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import api, { getErrorMessage } from '@/lib/api';
+import { formatPrice } from '@/lib/format';
+import Spinner from '@/components/ui/Spinner';
+import styles from '@/components/admin/AdminDashboardPage.module.css';
 
 const STATUS_LABELS: Record<string, string> = { pending: 'Pending', shipped: 'Shipped', delivered: 'Delivered' };
 
-export default async function AdminDashboardPage() {
-  const stats = await getAdminStats();
+interface Stats {
+  revenue: number;
+  orderCount: number;
+  productCount: number;
+  userCount: number;
+  lowStock: { _id: string; name: string; slug: string; countInStock: number }[];
+  recentOrders: { _id: string; totalPrice: number; status: string; createdAt: string; user: { name: string } | null }[];
+}
+
+export default function AdminDashboardPage() {
+  const [state, setState] = useState<{ stats: Stats | null; error: string | null }>({ stats: null, error: null });
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get('/admin/stats')
+      .then(({ data }) => !cancelled && setState({ stats: data.data, error: null }))
+      .catch((err) => !cancelled && setState({ stats: null, error: getErrorMessage(err) }));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const { stats, error } = state;
+
+  if (error) {
+    return (
+      <main className={`${styles.page} ${styles.error}`}>
+        <h1>{error}</h1>
+      </main>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <main className={styles.page} aria-busy="true">
+        <Spinner fullPage />
+      </main>
+    );
+  }
 
   const tiles = [
     { label: 'Revenue', value: formatPrice(stats.revenue) },
@@ -65,7 +104,7 @@ export default async function AdminDashboardPage() {
               {stats.recentOrders.map((order) => (
                 <li key={order._id} className={styles.listRow}>
                   <span>
-                    {order.userName ?? 'Deleted user'} ·{' '}
+                    {order.user?.name ?? 'Deleted user'} ·{' '}
                     <time dateTime={order.createdAt}>{new Date(order.createdAt).toLocaleDateString('sv-SE')}</time>
                   </span>
                   <span>
