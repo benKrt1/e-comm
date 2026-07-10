@@ -1,0 +1,24 @@
+.heart {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-bg) 65%, transparent);
+  backdrop-filter: blur(6px);
+  color: var(--color-text-muted);
+  transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.heart:hover:not(:disabled) {
+  color: var(--color-danger);
+}
+
+.heart:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.saved {
+  color: var(--color-danger);
+}

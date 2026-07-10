@@ -1,6 +1,7 @@
 import type { Types } from 'mongoose';
 import dbConnect from '@/lib/db';
 import Review from '@/models/Review';
+import Order from '@/models/Order';
 import type { SerializedReview } from '@/types';
 
 type PopulatedLeanReview = {
@@ -34,4 +35,12 @@ export async function getProductReviews(productId: string) {
     .lean<PopulatedLeanReview[]>();
 
   return reviews.map(serializeReview);
+}
+
+// Whether the user may review this product: a paid order of theirs contains
+// it. Drives whether the form shows; the create action re-enforces.
+export async function hasPurchased(productId: string, userId: string) {
+  await dbConnect();
+  const purchased = await Order.exists({ user: userId, isPaid: true, 'orderItems.product': productId });
+  return Boolean(purchased);
 }

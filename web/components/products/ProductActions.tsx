@@ -5,6 +5,7 @@ import { useCart } from '@/components/providers/CartProvider';
 import { useToast } from '@/components/providers/ToastProvider';
 import { getErrorMessage } from '@/lib/errors';
 import Button from '@/components/ui/Button';
+import WishlistButton from '@/components/wishlist/WishlistButton';
 import type { SerializedProduct } from '@/types';
 import styles from '@/app/products/[slug]/ProductPage.module.css';
 
@@ -51,6 +52,7 @@ export default function ProductActions({ product }: { product: SerializedProduct
       <Button disabled={outOfStock} isLoading={adding} onClick={handleAddToCart}>
         {outOfStock ? 'Out of stock' : 'Add to cart'}
       </Button>
+      <WishlistButton product={{ _id: product._id, name: product.name }} />
     </div>
   );
 }

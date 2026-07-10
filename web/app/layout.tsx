@@ -3,6 +3,7 @@ import { Inter, Space_Grotesk } from 'next/font/google';
 import { auth } from '@/auth';
 import { ToastProvider } from '@/components/providers/ToastProvider';
 import { CartProvider } from '@/components/providers/CartProvider';
+import { WishlistProvider } from '@/components/providers/WishlistProvider';
 import Navbar from '@/components/layout/Navbar';
 import './globals.css';
 
@@ -34,13 +35,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <ToastProvider>
           <CartProvider isAuthed={Boolean(session?.user)}>
-            <a href="#main-content" className="skip-link">
-              Skip to content
-            </a>
-            <Navbar />
-            <div id="main-content" tabIndex={-1}>
-              {children}
-            </div>
+            <WishlistProvider isAuthed={Boolean(session?.user)}>
+              <a href="#main-content" className="skip-link">
+                Skip to content
+              </a>
+              <Navbar />
+              <div id="main-content" tabIndex={-1}>
+                {children}
+              </div>
+            </WishlistProvider>
           </CartProvider>
         </ToastProvider>
       </body>

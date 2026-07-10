@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import Rating from '@/components/ui/Rating';
+import WishlistButton from '@/components/wishlist/WishlistButton';
 import { formatPrice } from '@/lib/format';
 import type { SerializedProduct } from '@/types';
 import styles from './ProductCard.module.css';
@@ -42,6 +43,7 @@ export default function ProductCard({ product }: { product: SerializedProduct })
           <p className={styles.price}>{formatPrice(product.price)}</p>
         </div>
       </Link>
+      <WishlistButton product={{ _id: product._id, name: product.name }} className={styles.wishlist} />
     </motion.li>
   );
 }

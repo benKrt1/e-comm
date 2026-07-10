@@ -1,0 +1,90 @@
+'use client';
+
+import { useState, type SubmitEvent } from 'react';
+import { useToast } from '@/components/providers/ToastProvider';
+import { createReviewAction, updateReviewAction } from '@/actions/reviews';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
+import StarInput from './StarInput';
+import type { SerializedReview } from '@/types';
+import styles from './ReviewForm.module.css';
+
+interface ReviewFormProps {
+  productId: string;
+  existing?: SerializedReview | null;
+  onSaved: (review: SerializedReview) => void;
+  onCancel?: () => void;
+}
+
+/**
+ * Create or edit a review. `existing` switches the form into edit mode.
+ * Calls onSaved(review) with the server's populated copy.
+ */
+export default function ReviewForm({ productId, existing = null, onSaved, onCancel }: ReviewFormProps) {
+  const addToast = useToast();
+  const [rating, setRating] = useState(existing?.rating ?? 0);
+  const [title, setTitle] = useState(existing?.title ?? '');
+  const [comment, setComment] = useState(existing?.comment ?? '');
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (rating === 0) {
+      addToast('Pick a star rating first', 'error');
+      return;
+    }
+    setSaving(true);
+    const result = existing
+      ? await updateReviewAction(existing._id, { rating, title, comment })
+      : await createReviewAction(productId, { rating, title, comment });
+    setSaving(false);
+
+    if (result.success && result.review) {
+      addToast(result.message);
+      onSaved(result.review);
+    } else {
+      addToast(result.message, 'error');
+    }
+  };
+
+  return (
+    <form className={styles.form} onSubmit={handleSubmit}>
+      <h3 className={styles.heading}>{existing ? 'Edit your review' : 'Write a review'}</h3>
+      <StarInput value={rating} onChange={setRating} />
+      <Input
+        id="review-title"
+        label="Title"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        required
+        minLength={2}
+        maxLength={100}
+      />
+      <div className={styles.field}>
+        <label htmlFor="review-comment" className={styles.commentLabel}>
+          Your review
+        </label>
+        <textarea
+          id="review-comment"
+          className={styles.textarea}
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          required
+          minLength={2}
+          maxLength={1000}
+          rows={4}
+        />
+      </div>
+      <div className={styles.actions}>
+        <Button type="submit" isLoading={saving}>
+          {existing ? 'Save changes' : 'Publish review'}
+        </Button>
+        {existing && (
+          <button type="button" className={styles.cancel} onClick={onCancel}>
+            Cancel
+          </button>
+        )}
+      </div>
+    </form>
+  );
+}
