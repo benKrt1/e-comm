@@ -1,0 +1,132 @@
+.page {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6) var(--space-16);
+}
+
+.title {
+  font-size: 2rem;
+  margin-bottom: var(--space-8);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: var(--space-8);
+  align-items: start;
+}
+
+.form {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.form h2 {
+  font-size: 1.25rem;
+  margin-bottom: var(--space-4);
+}
+
+.addressRow {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: var(--space-4);
+}
+
+.payButton {
+  width: 100%;
+}
+
+.testHint {
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+  text-align: center;
+}
+
+.summary {
+  position: sticky;
+  top: calc(var(--space-16) + var(--space-4));
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  display: grid;
+  gap: var(--space-4);
+}
+
+.summary h2 {
+  font-size: 1.25rem;
+}
+
+.items {
+  list-style: none;
+  display: grid;
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--space-4);
+}
+
+.items li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  font-size: 0.9375rem;
+}
+
+.itemName {
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summary dl {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.summary dl div {
+  display: flex;
+  justify-content: space-between;
+}
+
+.summary dt {
+  color: var(--color-text-muted);
+}
+
+.summary dd {
+  font-variant-numeric: tabular-nums;
+}
+
+.total {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-2);
+  font-weight: 700;
+}
+
+.total dt {
+  color: var(--color-text);
+}
+
+.error {
+  text-align: center;
+  padding-top: var(--space-16);
+  display: grid;
+  justify-items: center;
+  gap: var(--space-4);
+}
+
+.backLink {
+  color: var(--color-accent);
+}
+
+@media (max-width: 860px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  /* Summary first on mobile: users confirm what they're paying before the form */
+  .summary {
+    position: static;
+    order: -1;
+  }
+}
