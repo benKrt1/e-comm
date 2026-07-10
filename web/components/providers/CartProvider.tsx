@@ -9,28 +9,18 @@ import {
   useCallback,
   type ReactNode,
 } from 'react';
-import { useToast } from './ToastProvider';
-import {
-  getCartAction,
-  addToCartAction,
-  updateCartItemAction,
-  removeFromCartAction,
-  clearCartAction,
-  mergeCartAction,
-  type CartActionResult,
-} from '@/actions/cart';
+import api from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/components/providers/ToastProvider';
 import { readGuestCart, writeGuestCart, clearGuestCart, toCartProduct } from '@/lib/cartStorage';
 import type { CartItemLine, CartProduct } from '@/types';
 
 /**
  * One cart for both worlds. Guests: localStorage snapshots, mutated locally.
  * Logged in: the server cart is the single source of truth — every mutation
- * runs a server action and adopts the populated cart from the result.
- * On login the guest cart is folded in via mergeCartAction, then cleared.
+ * round-trips and adopts the populated cart from the response envelope.
+ * On login the guest cart is folded in via POST /cart/merge, then cleared.
  * Item shape is identical either way: { product: {…}, quantity }.
- *
- * isAuthed comes down from the root layout (server-read session) and flips
- * on router.refresh() after login/logout, driving the merge/reset effect.
  */
 interface CartState {
   items: CartItemLine[];
@@ -38,8 +28,6 @@ interface CartState {
 }
 
 type CartAction = { type: 'SET_ITEMS'; payload: CartItemLine[] };
-
-const initialState: CartState = { items: [], status: 'loading' };
 
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
@@ -63,20 +51,18 @@ interface CartContextValue {
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-/** Server-action results throw on failure so callers surface the message. */
-function adopt(result: CartActionResult, dispatch: (a: CartAction) => void) {
-  if (!result.success) throw new Error(result.message);
-  dispatch({ type: 'SET_ITEMS', payload: result.cart });
-}
-
-export function CartProvider({ isAuthed, children }: { isAuthed: boolean; children: ReactNode }) {
+export function CartProvider({ children }: { children: ReactNode }) {
+  const { status: authStatus } = useAuth();
   const addToast = useToast();
-  const [state, dispatch] = useReducer(cartReducer, initialState);
+  const [state, dispatch] = useReducer(cartReducer, { items: [], status: 'loading' });
+  const isAuthed = authStatus === 'authenticated';
 
-  // (Re)load whenever auth flips: login merges + adopts the server cart;
-  // logout falls back to the (now empty) guest cart.
+  // (Re)load whenever auth resolves or flips: login merges + adopts the
+  // server cart; logout falls back to the (now empty) guest cart.
   useEffect(() => {
-    if (!isAuthed) {
+    if (authStatus === 'loading') return undefined;
+
+    if (authStatus === 'guest') {
       dispatch({ type: 'SET_ITEMS', payload: readGuestCart() });
       return undefined;
     }
@@ -89,23 +75,18 @@ export function CartProvider({ isAuthed, children }: { isAuthed: boolean; childr
     clearGuestCart();
 
     const request = guestItems.length
-      ? mergeCartAction(
-          guestItems.map(({ product, quantity }) => ({
+      ? api.post('/cart/merge', {
+          items: guestItems.map(({ product, quantity }) => ({
             product: product._id,
-            quantity: Math.min(quantity, 99), // pre-clamp-era carts may exceed the max
-          }))
-        )
-      : getCartAction();
+            quantity: Math.min(quantity, 99),
+          })),
+        })
+      : api.get('/cart');
 
     request
-      .then((result) => {
-        if (cancelled) return;
-        if (!result.success) throw new Error(result.message);
-        dispatch({ type: 'SET_ITEMS', payload: result.cart });
-      })
+      .then(({ data }) => !cancelled && dispatch({ type: 'SET_ITEMS', payload: data.data.cart }))
       .catch(() => {
-        // Failed — hand the items back for the next attempt and tell the
-        // user instead of silently presenting an empty cart.
+        // Failed — hand the items back for the next attempt and tell the user.
         writeGuestCart(guestItems);
         if (cancelled) return;
         addToast('Could not load your cart — please refresh to try again', 'error');
@@ -115,7 +96,7 @@ export function CartProvider({ isAuthed, children }: { isAuthed: boolean; childr
     return () => {
       cancelled = true;
     };
-  }, [isAuthed, addToast]);
+  }, [authStatus, addToast]);
 
   /** Persist a guest mutation and reflect it in state in one move. */
   const commitGuest = useCallback((items: CartItemLine[]) => {
@@ -126,23 +107,19 @@ export function CartProvider({ isAuthed, children }: { isAuthed: boolean; childr
   const addItem = useCallback<CartContextValue['addItem']>(
     async (product, quantity) => {
       if (isAuthed) {
-        adopt(await addToCartAction(product._id, quantity), dispatch);
+        const { data } = await api.post('/cart', { productId: product._id, quantity });
+        dispatch({ type: 'SET_ITEMS', payload: data.data.cart });
         return;
       }
       const items = readGuestCart();
       const existing = items.find((i) => i.product._id === product._id);
-      // Same clamping rules as the server: cap at stock (and the max of 99
-      // per line) instead of erroring.
       const next = existing
         ? items.map((i) =>
             i.product._id === product._id
               ? { ...i, quantity: Math.min(i.quantity + quantity, product.countInStock, 99) }
               : i
           )
-        : [
-            ...items,
-            { product: toCartProduct(product), quantity: Math.min(quantity, product.countInStock, 99) },
-          ];
+        : [...items, { product: toCartProduct(product), quantity: Math.min(quantity, product.countInStock, 99) }];
       commitGuest(next);
     },
     [isAuthed, commitGuest]
@@ -151,13 +128,12 @@ export function CartProvider({ isAuthed, children }: { isAuthed: boolean; childr
   const updateQuantity = useCallback<CartContextValue['updateQuantity']>(
     async (productId, quantity) => {
       if (isAuthed) {
-        adopt(await updateCartItemAction(productId, quantity), dispatch);
+        const { data } = await api.put(`/cart/${productId}`, { quantity });
+        dispatch({ type: 'SET_ITEMS', payload: data.data.cart });
         return;
       }
       const next = readGuestCart().map((i) =>
-        i.product._id === productId
-          ? { ...i, quantity: Math.min(quantity, i.product.countInStock, 99) }
-          : i
+        i.product._id === productId ? { ...i, quantity: Math.min(quantity, i.product.countInStock, 99) } : i
       );
       commitGuest(next);
     },
@@ -167,7 +143,8 @@ export function CartProvider({ isAuthed, children }: { isAuthed: boolean; childr
   const removeItem = useCallback<CartContextValue['removeItem']>(
     async (productId) => {
       if (isAuthed) {
-        adopt(await removeFromCartAction(productId), dispatch);
+        const { data } = await api.delete(`/cart/${productId}`);
+        dispatch({ type: 'SET_ITEMS', payload: data.data.cart });
         return;
       }
       commitGuest(readGuestCart().filter((i) => i.product._id !== productId));
@@ -177,7 +154,8 @@ export function CartProvider({ isAuthed, children }: { isAuthed: boolean; childr
 
   const clearCart = useCallback(async () => {
     if (isAuthed) {
-      adopt(await clearCartAction(), dispatch);
+      const { data } = await api.delete('/cart');
+      dispatch({ type: 'SET_ITEMS', payload: data.data.cart });
       return;
     }
     clearGuestCart();
@@ -187,16 +165,7 @@ export function CartProvider({ isAuthed, children }: { isAuthed: boolean; childr
   const value = useMemo<CartContextValue>(() => {
     const itemCount = state.items.reduce((sum, i) => sum + i.quantity, 0);
     const subtotal = state.items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
-    return {
-      items: state.items,
-      status: state.status,
-      itemCount,
-      subtotal,
-      addItem,
-      updateQuantity,
-      removeItem,
-      clearCart,
-    };
+    return { items: state.items, status: state.status, itemCount, subtotal, addItem, updateQuantity, removeItem, clearCart };
   }, [state, addItem, updateQuantity, removeItem, clearCart]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

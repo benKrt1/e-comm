@@ -1,48 +1,80 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useReducer, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import api from '@/lib/api';
+import { getErrorMessage } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/providers/ToastProvider';
-import { getErrorMessage } from '@/lib/errors';
-import { deleteReviewAction } from '@/actions/reviews';
 import Rating from '@/components/ui/Rating';
+import Spinner from '@/components/ui/Spinner';
 import ReviewForm from './ReviewForm';
 import type { SerializedReview } from '@/types';
 import styles from './ReviewsSection.module.css';
-
-interface ReviewsSectionProps {
-  productId: string;
-  initialReviews: SerializedReview[];
-  currentUserId: string | null;
-  isAuthed: boolean;
-  purchased: boolean;
-}
 
 /**
  * The product page's review block: list + (for eligible users) the form.
  * Eligibility = logged in, has a paid order containing this product, and
  * hasn't reviewed it yet — the server re-enforces all three; the client
  * checks only decide what UI to show.
- *
- * initialReviews arrives server-rendered (SEO). After any write we update
- * local state for instant feedback and router.refresh() so the product
- * header's denormalized rating reflects the recalc.
  */
-export default function ReviewsSection({
-  productId,
-  initialReviews,
-  currentUserId,
-  isAuthed,
-  purchased,
-}: ReviewsSectionProps) {
-  const router = useRouter();
+function purchasedReducer(_state: boolean, action: { payload: boolean }) {
+  return action.payload;
+}
+
+export default function ReviewsSection({ productId }: { productId: string }) {
+  const { user, status: authStatus } = useAuth();
   const addToast = useToast();
-  const [reviews, setReviews] = useState(initialReviews);
+  const [reviews, setReviews] = useState<SerializedReview[] | null>(null); // null = loading
+  const [purchased, dispatchPurchased] = useReducer(purchasedReducer, false);
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const ownReview = currentUserId ? reviews.find((review) => review.user._id === currentUserId) : null;
+  // Reviews are public — always fetched.
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get(`/reviews?product=${productId}`)
+      .then(({ data }) => !cancelled && setReviews(data.data.reviews))
+      .catch(() => !cancelled && setReviews([]));
+    return () => {
+      cancelled = true;
+    };
+  }, [productId]);
+
+  // Purchase check drives whether the form shows (server still enforces).
+  useEffect(() => {
+    if (authStatus !== 'authenticated') {
+      dispatchPurchased({ payload: false });
+      return undefined;
+    }
+    let cancelled = false;
+    api
+      .get('/orders/mine')
+      .then(({ data }) => {
+        if (cancelled) return;
+        const bought = data.data.orders.some(
+          (order: { isPaid: boolean; orderItems: { product: string }[] }) =>
+            order.isPaid && order.orderItems.some((item) => item.product === productId)
+        );
+        dispatchPurchased({ payload: bought });
+      })
+      .catch(() => !cancelled && dispatchPurchased({ payload: false }));
+    return () => {
+      cancelled = true;
+    };
+  }, [authStatus, productId]);
+
+  if (reviews === null) {
+    return (
+      <section className={styles.section} aria-busy="true">
+        <h2>Reviews</h2>
+        <Spinner />
+      </section>
+    );
+  }
+
+  const ownReview = user ? reviews.find((review) => review.user._id === user.id) : null;
   const average = reviews.length
     ? Math.round((reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length) * 10) / 10
     : 0;
@@ -53,22 +85,21 @@ export default function ReviewsSection({
       : [review, ...reviews];
     setReviews(next);
     setEditing(false);
-    router.refresh();
   };
 
   const handleDelete = async () => {
     if (!ownReview) return;
     setDeleting(true);
-    const result = await deleteReviewAction(ownReview._id);
-    setDeleting(false);
-    if (!result.success) {
-      addToast(getErrorMessage(new Error(result.message)), 'error');
-      return;
+    try {
+      await api.delete(`/reviews/${ownReview._id}`);
+      setReviews(reviews.filter((review) => review._id !== ownReview._id));
+      setEditing(false);
+      addToast('Review deleted');
+    } catch (err) {
+      addToast(getErrorMessage(err), 'error');
+    } finally {
+      setDeleting(false);
     }
-    setReviews(reviews.filter((review) => review._id !== ownReview._id));
-    setEditing(false);
-    addToast('Review deleted');
-    router.refresh();
   };
 
   return (
@@ -79,20 +110,17 @@ export default function ReviewsSection({
       </div>
 
       {/* Form slot: create (purchased, no review yet) or edit (own review). */}
-      {isAuthed && purchased && !ownReview && <ReviewForm productId={productId} onSaved={handleSaved} />}
+      {authStatus === 'authenticated' && purchased && !ownReview && (
+        <ReviewForm productId={productId} onSaved={handleSaved} />
+      )}
       {ownReview && editing && (
-        <ReviewForm
-          productId={productId}
-          existing={ownReview}
-          onSaved={handleSaved}
-          onCancel={() => setEditing(false)}
-        />
+        <ReviewForm productId={productId} existing={ownReview} onSaved={handleSaved} onCancel={() => setEditing(false)} />
       )}
 
       {reviews.length === 0 ? (
         <p className={styles.emptyNote}>
           No reviews yet.{' '}
-          {!isAuthed && (
+          {authStatus !== 'authenticated' && (
             <>
               <Link href="/login" className={styles.loginLink}>
                 Log in

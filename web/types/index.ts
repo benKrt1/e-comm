@@ -1,10 +1,10 @@
 import type { ProductCategory } from '@/lib/categories';
-import type { OrderStatus } from '@/models/Order';
+
+export type OrderStatus = 'pending' | 'shipped' | 'delivered';
 
 /**
- * Serialized shapes crossing the RSC/client boundary. Mongoose documents
- * can't be passed to client components, so every data function returns
- * plain objects with stringified ids and ISO dates.
+ * Shared frontend types for the shapes the API returns (JSON: string ids,
+ * ISO date strings). Named "Serialized" for historical reasons.
  */
 
 export interface SerializedProduct {

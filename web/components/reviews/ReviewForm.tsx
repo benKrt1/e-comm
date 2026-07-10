@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, type SubmitEvent } from 'react';
+import api, { getErrorMessage } from '@/lib/api';
 import { useToast } from '@/components/providers/ToastProvider';
-import { createReviewAction, updateReviewAction } from '@/actions/reviews';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import StarInput from './StarInput';
@@ -34,16 +34,16 @@ export default function ReviewForm({ productId, existing = null, onSaved, onCanc
       return;
     }
     setSaving(true);
-    const result = existing
-      ? await updateReviewAction(existing._id, { rating, title, comment })
-      : await createReviewAction(productId, { rating, title, comment });
-    setSaving(false);
-
-    if (result.success && result.review) {
-      addToast(result.message);
-      onSaved(result.review);
-    } else {
-      addToast(result.message, 'error');
+    try {
+      const { data } = existing
+        ? await api.put(`/reviews/${existing._id}`, { rating, title, comment })
+        : await api.post('/reviews', { productId, rating, title, comment });
+      addToast(data.message);
+      onSaved(data.data.review);
+    } catch (err) {
+      addToast(getErrorMessage(err), 'error');
+    } finally {
+      setSaving(false);
     }
   };
 

@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, type ChangeEvent, type SubmitEvent } from 'react';
+import { useEffect, useState, type ChangeEvent, type SubmitEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/providers/ToastProvider';
-import { registerAction } from '@/actions/auth';
+import { getErrorMessage } from '@/lib/api';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import styles from './AuthPage.module.css';
@@ -12,6 +13,7 @@ import styles from './AuthPage.module.css';
 const EMAIL_RE = /^\S+@\S+\.\S+$/;
 
 export default function RegisterForm() {
+  const { register, status } = useAuth();
   const addToast = useToast();
   const router = useRouter();
 
@@ -19,6 +21,10 @@ export default function RegisterForm() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (status === 'authenticated') router.replace('/');
+  }, [status, router]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -43,18 +49,12 @@ export default function RegisterForm() {
     if (!validate()) return;
 
     setSubmitting(true);
-    const result = await registerAction({
-      name: form.name.trim(),
-      email: form.email,
-      password: form.password,
-    });
-    if (result.success) {
-      addToast(result.message);
-      router.push('/');
-      // Re-render server components (Navbar) with the new session.
-      router.refresh();
-    } else {
-      setFormError(result.message);
+    try {
+      const { message } = await register(form.name.trim(), form.email, form.password);
+      addToast(message);
+      // The effect above redirects once status flips to authenticated.
+    } catch (err) {
+      setFormError(getErrorMessage(err));
       setSubmitting(false);
     }
   };
@@ -73,25 +73,8 @@ export default function RegisterForm() {
               {formError}
             </p>
           )}
-          <Input
-            id="reg-name"
-            name="name"
-            label="Full name"
-            autoComplete="name"
-            value={form.name}
-            onChange={handleChange}
-            error={fieldErrors.name}
-          />
-          <Input
-            id="reg-email"
-            name="email"
-            type="email"
-            label="Email"
-            autoComplete="email"
-            value={form.email}
-            onChange={handleChange}
-            error={fieldErrors.email}
-          />
+          <Input id="reg-name" name="name" label="Full name" autoComplete="name" value={form.name} onChange={handleChange} error={fieldErrors.name} />
+          <Input id="reg-email" name="email" type="email" label="Email" autoComplete="email" value={form.email} onChange={handleChange} error={fieldErrors.email} />
           <Input
             id="reg-password"
             name="password"

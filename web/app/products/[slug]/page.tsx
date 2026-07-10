@@ -1,53 +1,79 @@
-import type { Metadata } from 'next';
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import { auth } from '@/auth';
-import { getProductBySlug } from '@/lib/data/products';
-import { getProductReviews, hasPurchased } from '@/lib/data/reviews';
+import { useParams } from 'next/navigation';
+import api, { getErrorMessage } from '@/lib/api';
 import { formatPrice } from '@/lib/format';
 import Rating from '@/components/ui/Rating';
+import Skeleton from '@/components/ui/Skeleton';
 import ProductGrid from '@/components/products/ProductGrid';
 import ProductGallery from '@/components/products/ProductGallery';
 import ProductActions from '@/components/products/ProductActions';
 import ReviewsSection from '@/components/reviews/ReviewsSection';
+import type { SerializedProduct } from '@/types';
 import styles from './ProductPage.module.css';
 
-interface Props {
-  params: Promise<{ slug: string }>;
+interface ProductData {
+  product: SerializedProduct | null;
+  related: SerializedProduct[];
+  loading: boolean;
+  error: string | null;
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params;
-  const data = await getProductBySlug(slug);
-  if (!data) return { title: 'Product not found' };
+export default function ProductPage() {
+  const params = useParams<{ slug: string }>();
+  const slug = params.slug;
 
-  const { product } = data;
-  return {
-    title: product.name,
-    description: product.description.slice(0, 160),
-    openGraph: {
-      title: product.name,
-      description: product.description.slice(0, 160),
-      images: product.images[0] ? [{ url: product.images[0].url, alt: product.images[0].alt }] : [],
-    },
-  };
-}
+  const [data, setData] = useState<ProductData>({ product: null, related: [], loading: true, error: null });
 
-export default async function ProductPage({ params }: Props) {
-  const { slug } = await params;
-  const data = await getProductBySlug(slug);
-  if (!data) notFound();
+  useEffect(() => {
+    let cancelled = false;
+    setData({ product: null, related: [], loading: true, error: null });
+    window.scrollTo(0, 0); // related-product clicks land mid-scroll otherwise
+    api
+      .get(`/products/${slug}`)
+      .then(({ data: res }) => !cancelled && setData({ ...res.data, loading: false, error: null }))
+      .catch(
+        (err) => !cancelled && setData({ product: null, related: [], loading: false, error: getErrorMessage(err) })
+      );
+    return () => {
+      cancelled = true;
+    };
+  }, [slug]);
 
-  const { product, related } = data;
+  const { product, related, loading, error } = data;
+
+  if (loading) {
+    return (
+      <main className={styles.page} aria-busy="true">
+        <div className={styles.layout}>
+          <Skeleton className={styles.gallerySkeleton} />
+          <div className={styles.infoSkeleton}>
+            <Skeleton style={{ width: '30%', height: 14 }} />
+            <Skeleton style={{ width: '75%', height: 34 }} />
+            <Skeleton style={{ width: '45%', height: 16 }} />
+            <Skeleton style={{ width: '100%', height: 90 }} />
+            <Skeleton style={{ width: '40%', height: 44 }} />
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <main className={`${styles.page} ${styles.error}`}>
+        <h1>{error ?? 'Product not found'}</h1>
+        <Link href="/products" className={styles.backLink}>
+          ← Back to the shop
+        </Link>
+      </main>
+    );
+  }
+
   const outOfStock = product.countInStock === 0;
   const lowStock = product.countInStock > 0 && product.countInStock <= 5;
-
-  const session = await auth();
-  const userId = session?.user?.id ?? null;
-  const [reviews, purchased] = await Promise.all([
-    getProductReviews(product._id),
-    userId ? hasPurchased(product._id, userId) : Promise.resolve(false),
-  ]);
 
   return (
     <main className={styles.page}>
@@ -81,13 +107,7 @@ export default async function ProductPage({ params }: Props) {
         </section>
       </div>
 
-      <ReviewsSection
-        productId={product._id}
-        initialReviews={reviews}
-        currentUserId={userId}
-        isAuthed={Boolean(userId)}
-        purchased={purchased}
-      />
+      <ReviewsSection productId={product._id} />
 
       {related.length > 0 && (
         <section className={styles.related} aria-labelledby="related-heading">

@@ -1,24 +1,35 @@
 'use client';
 
-import { useState, type ChangeEvent, type SubmitEvent } from 'react';
+import { useEffect, useState, type ChangeEvent, type SubmitEvent } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/components/providers/ToastProvider';
-import { loginAction } from '@/actions/auth';
+import { getErrorMessage } from '@/lib/api';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import styles from './AuthPage.module.css';
 
 const EMAIL_RE = /^\S+@\S+\.\S+$/;
 
-export default function LoginForm({ redirectTo }: { redirectTo: string }) {
+export default function LoginForm() {
+  const { login, status } = useAuth();
   const addToast = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Only same-site paths are valid post-login destinations (no open redirects).
+  const redirectParam = searchParams.get('redirect');
+  const target = redirectParam?.startsWith('/') ? redirectParam : '/';
 
   const [form, setForm] = useState({ email: '', password: '' });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // Already (or just now) logged in → go where the user came from.
+  useEffect(() => {
+    if (status === 'authenticated') router.replace(target);
+  }, [status, router, target]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -39,14 +50,12 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
     if (!validate()) return;
 
     setSubmitting(true);
-    const result = await loginAction(form);
-    if (result.success) {
-      addToast(result.message);
-      router.push(redirectTo);
-      // Re-render server components (Navbar) with the new session.
-      router.refresh();
-    } else {
-      setFormError(result.message);
+    try {
+      const { message } = await login(form.email, form.password);
+      addToast(message);
+      // The effect above redirects once status flips to authenticated.
+    } catch (err) {
+      setFormError(getErrorMessage(err));
       setSubmitting(false);
     }
   };

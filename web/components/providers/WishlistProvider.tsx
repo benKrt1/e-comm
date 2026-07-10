@@ -9,14 +9,15 @@ import {
   useCallback,
   type ReactNode,
 } from 'react';
-import { useToast } from './ToastProvider';
-import { getWishlistAction, toggleWishlistAction } from '@/actions/wishlist';
+import api from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/components/providers/ToastProvider';
 import type { SerializedProduct } from '@/types';
 
 /**
  * Account-only wishlist (no guest flavor — spec decision). Holds the
  * populated product list; membership checks derive from it. Every mutation
- * adopts the server action's returned list, like CartProvider does.
+ * adopts the server's response, like CartProvider does.
  */
 interface WishlistState {
   items: SerializedProduct[];
@@ -44,23 +45,29 @@ interface WishlistContextValue {
 
 const WishlistContext = createContext<WishlistContextValue | null>(null);
 
-export function WishlistProvider({ isAuthed, children }: { isAuthed: boolean; children: ReactNode }) {
+export function WishlistProvider({ children }: { children: ReactNode }) {
+  const { status: authStatus } = useAuth();
   const addToast = useToast();
   const [state, dispatch] = useReducer(wishlistReducer, { items: [], status: 'loading' });
+  const isAuthed = authStatus === 'authenticated';
 
   useEffect(() => {
-    if (!isAuthed) {
+    if (authStatus === 'loading') return undefined;
+
+    if (authStatus === 'guest') {
       dispatch({ type: 'SET_ITEMS', payload: [] });
       return undefined;
     }
+
     let cancelled = false;
-    getWishlistAction()
-      .then((result) => !cancelled && dispatch({ type: 'SET_ITEMS', payload: result.success ? result.wishlist : [] }))
+    api
+      .get('/wishlist')
+      .then(({ data }) => !cancelled && dispatch({ type: 'SET_ITEMS', payload: data.data.wishlist }))
       .catch(() => !cancelled && dispatch({ type: 'SET_ITEMS', payload: [] }));
     return () => {
       cancelled = true;
     };
-  }, [isAuthed]);
+  }, [authStatus]);
 
   /** Toggle membership. Nudges guests to log in instead of mutating. */
   const toggle = useCallback<WishlistContextValue['toggle']>(
@@ -69,11 +76,13 @@ export function WishlistProvider({ isAuthed, children }: { isAuthed: boolean; ch
         addToast('Log in to save favorites', 'error');
         return;
       }
-      const result = await toggleWishlistAction(product._id);
-      if (!result.success) throw new Error(result.message);
-      dispatch({ type: 'SET_ITEMS', payload: result.wishlist });
+      const saved = state.items.some((item) => item._id === product._id);
+      const { data } = saved
+        ? await api.delete(`/wishlist/${product._id}`)
+        : await api.post(`/wishlist/${product._id}`);
+      dispatch({ type: 'SET_ITEMS', payload: data.data.wishlist });
     },
-    [isAuthed, addToast]
+    [isAuthed, state.items, addToast]
   );
 
   const value = useMemo<WishlistContextValue>(
