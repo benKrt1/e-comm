@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useToast } from '@/components/providers/ToastProvider';
+import { useCart } from '@/components/providers/CartProvider';
 import { logoutAction } from '@/actions/auth';
 import type { UserRole } from '@/types/next-auth';
 import styles from './Navbar.module.css';
@@ -14,7 +16,9 @@ interface NavLinksProps {
 export default function NavLinks({ user }: NavLinksProps) {
   const pathname = usePathname();
   const addToast = useToast();
+  const { itemCount } = useCart();
   const router = useRouter();
+  const reduceMotion = useReducedMotion();
 
   const activeClass = (href: string) => (pathname === href ? styles.active : undefined);
 
@@ -40,7 +44,7 @@ export default function NavLinks({ user }: NavLinksProps) {
       <Link
         href="/cart"
         className={`${styles.cartLink} ${pathname === '/cart' ? styles.active : ''}`.trim()}
-        aria-label="Cart"
+        aria-label={`Cart, ${itemCount} ${itemCount === 1 ? 'item' : 'items'}`}
       >
         <svg
           width="20"
@@ -57,6 +61,21 @@ export default function NavLinks({ user }: NavLinksProps) {
           <circle cx="20" cy="21" r="1" />
           <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
         </svg>
+        <AnimatePresence>
+          {itemCount > 0 && (
+            // key={itemCount}: re-mounts on every change so the badge pops
+            <motion.span
+              key={itemCount}
+              className={styles.badge}
+              initial={reduceMotion ? { opacity: 0 } : { scale: 0.4, opacity: 0 }}
+              animate={reduceMotion ? { opacity: 1 } : { scale: 1, opacity: 1 }}
+              exit={reduceMotion ? { opacity: 0 } : { scale: 0.4, opacity: 0 }}
+              transition={reduceMotion ? { duration: 0.1 } : { type: 'spring', stiffness: 500, damping: 25 }}
+            >
+              {itemCount > 99 ? '99+' : itemCount}
+            </motion.span>
+          )}
+        </AnimatePresence>
       </Link>
       {user ? (
         <>

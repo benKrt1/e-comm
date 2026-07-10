@@ -33,8 +33,19 @@ export interface SerializedReview {
   createdAt: string;
 }
 
-export interface SerializedCartItem {
-  product: SerializedProduct;
+// Fields a cart line needs to render — the full product document
+// (description, rating, …) would just bloat every cart payload.
+export interface CartProduct {
+  _id: string;
+  name: string;
+  slug: string;
+  price: number;
+  images: { url: string; alt: string }[];
+  countInStock: number;
+}
+
+export interface CartItemLine {
+  product: CartProduct;
   quantity: number;
 }
 

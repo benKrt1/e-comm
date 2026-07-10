@@ -1,23 +1,32 @@
 'use client';
 
 import { useState } from 'react';
+import { useCart } from '@/components/providers/CartProvider';
 import { useToast } from '@/components/providers/ToastProvider';
+import { getErrorMessage } from '@/lib/errors';
 import Button from '@/components/ui/Button';
 import type { SerializedProduct } from '@/types';
 import styles from '@/app/products/[slug]/ProductPage.module.css';
 
-/**
- * Quantity stepper + add-to-cart. The cart itself lands in the next
- * migration phase; until then the button explains itself.
- */
+/** Quantity stepper + add-to-cart for the product page. */
 export default function ProductActions({ product }: { product: SerializedProduct }) {
+  const { addItem } = useCart();
   const addToast = useToast();
   const [quantity, setQuantity] = useState(1);
+  const [adding, setAdding] = useState(false);
 
   const outOfStock = product.countInStock === 0;
 
-  const handleAddToCart = () => {
-    addToast('The cart arrives in the next migration phase', 'error');
+  const handleAddToCart = async () => {
+    setAdding(true);
+    try {
+      await addItem(product, quantity);
+      addToast(`${product.name} added to your cart`);
+    } catch (err) {
+      addToast(getErrorMessage(err), 'error');
+    } finally {
+      setAdding(false);
+    }
   };
 
   return (
@@ -39,7 +48,7 @@ export default function ProductActions({ product }: { product: SerializedProduct
           +
         </button>
       </div>
-      <Button disabled={outOfStock} onClick={handleAddToCart}>
+      <Button disabled={outOfStock} isLoading={adding} onClick={handleAddToCart}>
         {outOfStock ? 'Out of stock' : 'Add to cart'}
       </Button>
     </div>

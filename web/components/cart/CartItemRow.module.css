@@ -1,0 +1,137 @@
+.row {
+  display: grid;
+  grid-template-columns: 80px 1fr auto auto auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  list-style: none;
+  overflow: hidden; /* height collapses cleanly during the exit animation */
+}
+
+.thumb img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-raised);
+}
+
+.details {
+  min-width: 0;
+}
+
+.name {
+  font-weight: 600;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color var(--transition-fast);
+}
+
+.name:hover {
+  color: var(--color-accent);
+}
+
+.unitPrice {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.maxNote {
+  color: var(--color-warning);
+  font-size: 0.75rem;
+}
+
+.quantity {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+}
+
+.quantity button {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  color: var(--color-text-muted);
+  transition: color var(--transition-fast);
+}
+
+.quantity button:hover:not(:disabled) {
+  color: var(--color-accent);
+}
+
+.quantity button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.quantity span {
+  min-width: 1.5ch;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.lineTotal {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  min-width: 6ch;
+  text-align: right;
+}
+
+.remove {
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--color-text-muted);
+  padding: var(--space-1) var(--space-2);
+  transition: color var(--transition-fast);
+}
+
+.remove:hover {
+  color: var(--color-danger);
+}
+
+@media (max-width: 640px) {
+  .row {
+    grid-template-columns: 64px 1fr auto;
+    grid-template-areas:
+      'thumb details remove'
+      'thumb quantity total';
+    row-gap: var(--space-2);
+  }
+
+  .thumb {
+    grid-area: thumb;
+  }
+
+  .thumb img {
+    width: 64px;
+    height: 64px;
+  }
+
+  .details {
+    grid-area: details;
+  }
+
+  .quantity {
+    grid-area: quantity;
+    justify-self: start;
+  }
+
+  .lineTotal {
+    grid-area: total;
+  }
+
+  .remove {
+    grid-area: remove;
+    justify-self: end;
+  }
+}
