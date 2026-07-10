@@ -14,11 +14,13 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "images.unsplash.com" },
     ],
   },
-  // Dev: proxy /api to the Express server so the browser stays same-origin
-  // (the JWT cookie needs no cross-site config locally). In production the
-  // frontend talks to the API's absolute URL via NEXT_PUBLIC_API_URL and
-  // this rewrite is unused.
+  // Dev only: proxy /api to the Express server so the browser stays
+  // same-origin (the JWT cookie needs no cross-site config locally). In
+  // production the frontend talks to the API's absolute URL via
+  // NEXT_PUBLIC_API_URL, so no rewrite is emitted (proxying to localhost
+  // from Vercel would 502).
   async rewrites() {
+    if (process.env.NODE_ENV === "production") return [];
     return [{ source: "/api/:path*", destination: `${API_ORIGIN}/api/:path*` }];
   },
 };
