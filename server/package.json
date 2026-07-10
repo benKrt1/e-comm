@@ -25,7 +25,8 @@
     "express-validator": "^7.3.2",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.7.3",
-    "stripe": "^22.3.0"
+    "stripe": "^22.3.0",
+    "tsx": "^4.23.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -37,7 +38,6 @@
     "@types/node": "^24.10.1",
     "eslint": "^10.6.0",
     "globals": "^17.7.0",
-    "tsx": "^4.23.0",
     "typescript": "^5.9.3"
   },
   "allowScripts": {
