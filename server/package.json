@@ -1,0 +1,47 @@
+{
+  "name": "nordcart-server",
+  "version": "2.0.0",
+  "description": "NordCart REST API — Express + Mongoose + JWT (TypeScript)",
+  "private": true,
+  "type": "module",
+  "main": "server.ts",
+  "scripts": {
+    "dev": "tsx watch server.ts",
+    "start": "tsx server.ts",
+    "typecheck": "tsc --noEmit",
+    "seed": "tsx seed/seed.ts",
+    "seed:destroy": "tsx seed/seed.ts --destroy",
+    "lint": "eslint ."
+  },
+  "license": "MIT",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cloudinary": "^2.10.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.5.2",
+    "express-validator": "^7.3.2",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.7.3",
+    "stripe": "^22.3.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.9",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.5",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^24.10.1",
+    "eslint": "^10.6.0",
+    "globals": "^17.7.0",
+    "tsx": "^4.23.0",
+    "typescript": "^5.9.3"
+  },
+  "allowScripts": {
+    "bcrypt@6.0.0": true,
+    "esbuild@0.28.1": true
+  }
+}
