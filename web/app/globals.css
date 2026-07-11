@@ -52,6 +52,29 @@
   color-scheme: dark;
 }
 
+/* Light theme — a bright, cool Scandinavian daylight that keeps the aurora
+   accent as the brand thread. The whole app reads its colors from these
+   tokens, so overriding them here re-skins everything. The theme is chosen
+   by an inline script (data-theme on <html>) before first paint. */
+:root[data-theme='light'] {
+  --color-bg: #f4f6f9;
+  --color-surface: #ffffff;
+  --color-surface-raised: #eef1f5;
+  --color-border: #dde3ea;
+  --color-text: #14181f;
+  --color-text-muted: #58616e;
+  --color-accent: #0d9488; /* deeper teal so it pops on white, same family */
+  --color-accent-strong: #0f766e;
+  --color-accent-contrast: #ffffff; /* white text on the teal buttons */
+  --color-danger: #dc2626;
+  --color-success: #16a34a;
+  --color-warning: #b45309;
+  --shadow-card: 0 1px 3px rgb(20 30 50 / 0.08), 0 4px 14px rgb(20 30 50 / 0.06);
+  --shadow-lifted: 0 12px 32px rgb(20 30 50 / 0.14);
+
+  color-scheme: light;
+}
+
 /* --- Reset --- */
 *,
 *::before,

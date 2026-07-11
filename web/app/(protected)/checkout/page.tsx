@@ -8,6 +8,7 @@ import type { StripeElementsOptions } from '@stripe/stripe-js';
 import api, { getErrorMessage } from '@/lib/api';
 import { getStripe } from '@/lib/stripe-client';
 import { useCart } from '@/components/providers/CartProvider';
+import { useTheme } from '@/components/providers/ThemeProvider';
 import { formatPrice } from '@/lib/format';
 import Spinner from '@/components/ui/Spinner';
 import CheckoutForm from './CheckoutForm';
@@ -15,17 +16,31 @@ import styles from './CheckoutPage.module.css';
 
 // Mirrors globals.css — Stripe renders the PaymentElement inside an iframe,
 // so CSS variables can't reach it; the appearance API is the only way in.
-const appearance: StripeElementsOptions['appearance'] = {
-  theme: 'night',
-  variables: {
-    colorPrimary: '#5eead4',
-    colorBackground: '#191c23',
-    colorText: '#e8eaf0',
-    colorDanger: '#f87171',
-    borderRadius: '10px',
-    fontFamily: 'Inter, system-ui, sans-serif',
-  },
-};
+// Built per theme so the card form matches light/dark like the rest of the app.
+const appearanceFor = (theme: 'light' | 'dark'): StripeElementsOptions['appearance'] =>
+  theme === 'dark'
+    ? {
+        theme: 'night',
+        variables: {
+          colorPrimary: '#5eead4',
+          colorBackground: '#191c23',
+          colorText: '#e8eaf0',
+          colorDanger: '#f87171',
+          borderRadius: '10px',
+          fontFamily: 'Inter, system-ui, sans-serif',
+        },
+      }
+    : {
+        theme: 'stripe',
+        variables: {
+          colorPrimary: '#0d9488',
+          colorBackground: '#ffffff',
+          colorText: '#14181f',
+          colorDanger: '#dc2626',
+          borderRadius: '10px',
+          fontFamily: 'Inter, system-ui, sans-serif',
+        },
+      };
 
 interface Totals {
   itemsPrice: number;
@@ -47,6 +62,7 @@ function CheckoutFlow({
   onPlaced: () => void;
 }) {
   const router = useRouter();
+  const { theme } = useTheme();
   const [intent, setIntent] = useState<{ clientSecret: string; totals: Totals } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -93,7 +109,11 @@ function CheckoutFlow({
       <h1 className={styles.title}>Checkout</h1>
       <div className={styles.layout}>
         {/* key: a new clientSecret must remount Elements — it's immutable per instance */}
-        <Elements key={intent.clientSecret} stripe={getStripe()} options={{ clientSecret: intent.clientSecret, appearance }}>
+        <Elements
+          key={`${intent.clientSecret}-${theme}`}
+          stripe={getStripe()}
+          options={{ clientSecret: intent.clientSecret, appearance: appearanceFor(theme) }}
+        >
           <CheckoutForm totalPrice={totals.totalPrice} onPlaced={handlePlaced} />
         </Elements>
 

@@ -67,6 +67,21 @@
   padding: var(--space-1);
 }
 
+.themeBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-1);
+  color: var(--color-text-muted);
+  border-radius: 999px;
+  transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.themeBtn:hover {
+  color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+}
+
 .badge {
   position: absolute;
   top: -6px;
